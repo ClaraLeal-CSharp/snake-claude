@@ -1,0 +1,23 @@
+{
+  "name": "Snake Claude",
+  "short_name": "Snake",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#060e09",
+  "theme_color": "#060e09",
+  "description": "Snake Game — Blazor WebAssembly + efeitos CRT",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

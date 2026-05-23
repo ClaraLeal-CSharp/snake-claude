@@ -1,19 +1,11 @@
-﻿@page "/counter"
-@rendermode InteractiveServer
+@* Counter.razor — removido @rendermode InteractiveServer *@
+@page "/counter"
 
-<PageTitle>Counter</PageTitle>
+<PageTitle>Counter — Snake Claude</PageTitle>
 
-<h1>Counter</h1>
-
-<p role="status">Current count: @currentCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<p role="status">Count: @_count</p>
+<button @onclick="() => _count++">+1</button>
 
 @code {
-    private int currentCount = 0;
-
-    private void IncrementCount()
-    {
-        currentCount++;
-    }
+    private int _count = 0;
 }
