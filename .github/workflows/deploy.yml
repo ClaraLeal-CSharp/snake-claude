@@ -1,0 +1,64 @@
+name: Deploy Snake Claude → GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Blazor WASM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore "Snake Claude/SnakeClaude/SnakeClaude.csproj"
+
+      - name: Publish (static WASM)
+        run: |
+          dotnet publish "Snake Claude/SnakeClaude/SnakeClaude.csproj" \
+            -c Release \
+            -o publish \
+            --nologo
+
+      - name: Fix base path para GitHub Pages
+        # Se o repositório não for na raiz (ex: usuario.github.io/snake-claude)
+        # descomente e ajuste a linha abaixo com o nome do repositório:
+        # run: sed -i 's|<base href="/" />|<base href="/snake-claude/" />|g' publish/wwwroot/index.html
+        run: echo "Base path OK (raiz do domínio)"
+
+      - name: Upload artifact para Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    name: Deploy para GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ── Arquivos backup da migração Blazor Server → WASM ───────────────────────
+*.bak
+dotnet-run.*.log

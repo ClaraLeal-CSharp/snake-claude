@@ -1,44 +1,40 @@
-using SnakeClaude.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using SnakeClaude;
 using SnakeClaude.Configuration;
 using SnakeClaude.Engine;
 using SnakeClaude.Interfaces;
 using SnakeClaude.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// ── Configuração ───────────────────────────────────────────────────────────
-// GameSettings é lido do appsettings.json e injetado via IOptions<GameSettings>
-builder.Services.Configure<GameSettings>(
-    builder.Configuration.GetSection(GameSettings.SectionName));
+// ── Configuração do jogo (hardcoded — sem appsettings no WASM) ─────────────
+// No WASM não há IConfiguration do servidor; usamos defaults configuráveis aqui.
+builder.Services.AddSingleton(new GameSettings
+{
+    GridWidth          = 20,
+    GridHeight         = 20,
+    TickIntervalMs     = 150,
+    MinTickIntervalMs  = 50,
+    SpeedIncrementMs   = 5,
+    InitialSnakeLength = 3,
+    WallMode           = SnakeClaude.Enums.WallMode.Solid,
+    BasePointsPerFood  = 10,
+    ComboWindowMs      = 3000,
+    MaxComboMultiplier = 5,
+    MaxFoodItems       = 1,
+    MaxPlayers         = 1
+});
 
 // ── Serviços do Jogo ───────────────────────────────────────────────────────
-// Singleton: serviços stateless reutilizados entre todas as sessões
+// Singleton: stateless, compartilhados na sessão WASM
 builder.Services.AddSingleton<IMovementService, MovementService>();
 builder.Services.AddSingleton<IFoodService, FoodService>();
 
-// Scoped: uma instância de ScoreService e GameEngine por sessão Blazor
-// Isso permite múltiplos jogadores independentes no futuro
+// Scoped → no WASM equivale a Singleton (single-user, single-tab)
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddScoped<IGameEngine, GameEngine>();
 
-// ── Blazor ─────────────────────────────────────────────────────────────────
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-var app = builder.Build();
-
-// ── Pipeline ───────────────────────────────────────────────────────────────
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
-}
-
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
-app.UseAntiforgery();
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();
+await builder.Build().RunAsync();

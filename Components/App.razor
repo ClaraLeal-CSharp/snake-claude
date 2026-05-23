@@ -1,28 +1,18 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+@using Microsoft.AspNetCore.Components.Routing
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#060e09" />
-    <base href="/" />
-    <ResourcePreloader />
-    @* CSS global CRT e jogo *@
-    <link rel="stylesheet" href="@Assets["css/crt.css"]" />
-    <link rel="stylesheet" href="@Assets["css/game.css"]" />
-    <link rel="stylesheet" href="@Assets["css/screens.css"]" />
-    <link rel="stylesheet" href="@Assets["SnakeClaude.styles.css"]" />
-    <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <title>Snake Claude</title>
-    <HeadOutlet />
-</head>
-
-<body>
-    <Routes />
-    <ReconnectModal />
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
-    <script src="@Assets["js/snake-effects.js"]"></script>
-</body>
-
-</html>
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Components.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Components.Layout.MainLayout)">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                        height:60vh;color:#4a9e5c;font-family:monospace;text-align:center;gap:1rem;">
+                <div style="font-size:2rem;">404</div>
+                <div>PÁGINA NÃO ENCONTRADA</div>
+                <a href="/" style="color:#7ed4a0;text-decoration:none;">[ VOLTAR ]</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

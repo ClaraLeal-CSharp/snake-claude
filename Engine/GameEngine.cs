@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using SnakeClaude.Configuration;
 using SnakeClaude.Enums;
 using SnakeClaude.Events;
@@ -9,30 +8,18 @@ using SnakeClaude.State;
 namespace SnakeClaude.Engine;
 
 /// <summary>
-/// Engine principal do jogo Snake.
-///
-/// Responsabilidades:
-/// - Gerenciar o game loop (tick-based via PeriodicTimer)
-/// - Coordenar os serviços (movimento, comida, pontuação)
-/// - Disparar eventos para o front-end (Observer Pattern)
-/// - Produzir snapshots imutáveis do estado
-///
-/// Decisões:
-/// - PeriodicTimer é preferível a Timer/Task.Delay pois não acumula ticks perdidos
-/// - A engine é Scoped: uma instância por sessão/jogador
-/// - Toda mutação de estado ocorre dentro do game loop (thread safety simplificado)
-/// - O front-end NUNCA acessa o estado mutável diretamente — apenas via snapshot/eventos
+/// Engine principal do jogo Snake — compatível com Blazor WASM.
+/// Recebe GameSettings diretamente (sem IOptions) e não usa ILogger (WASM-friendly).
 /// </summary>
 public sealed class GameEngine(
-    IOptions<GameSettings> settings,
+    GameSettings settings,
     IMovementService movementService,
     IFoodService foodService,
-    IScoreService scoreService,
-    ILogger<GameEngine> logger) : IGameEngine
+    IScoreService scoreService) : IGameEngine
 {
-    private readonly GameSettings _settings = settings.Value;
+    private readonly GameSettings _settings = settings;
 
-    // ── Estado mutável interno (não exposto diretamente) ───────────────────
+    // ── Estado mutável interno ─────────────────────────────────────────────
     private Snake? _snake;
     private GameGrid? _grid;
     private readonly List<Food> _activeFoods = [];
@@ -57,18 +44,12 @@ public sealed class GameEngine(
 
     // ── Interface pública ──────────────────────────────────────────────────
     public GameStatus Status => _status;
-
     public GameStateSnapshot CurrentSnapshot => BuildSnapshot();
 
     // ── Controle do Jogo ───────────────────────────────────────────────────
-
     public async Task StartAsync()
     {
-        if (_status is GameStatus.Running)
-            return;
-
-        logger.LogInformation("Iniciando novo jogo — Grid {W}x{H}", _settings.GridWidth, _settings.GridHeight);
-
+        if (_status is GameStatus.Running) return;
         SubscribeScoreEvents();
         InitializeGame();
         ChangeStatus(GameStatus.Running);
@@ -77,22 +58,16 @@ public sealed class GameEngine(
 
     public async Task PauseAsync()
     {
-        if (_status is not GameStatus.Running)
-            return;
-
+        if (_status is not GameStatus.Running) return;
         await StopLoopAsync();
         ChangeStatus(GameStatus.Paused);
-        logger.LogInformation("Jogo pausado no tick {Tick}", _tickCount);
     }
 
     public async Task ResumeAsync()
     {
-        if (_status is not GameStatus.Paused)
-            return;
-
+        if (_status is not GameStatus.Paused) return;
         ChangeStatus(GameStatus.Running);
         await StartLoopAsync();
-        logger.LogInformation("Jogo retomado");
     }
 
     public async Task ResetAsync()
@@ -102,7 +77,6 @@ public sealed class GameEngine(
         _activeFoods.Clear();
         _tickCount = 0;
         ChangeStatus(GameStatus.Idle);
-        logger.LogInformation("Jogo resetado");
     }
 
     public void RequestDirectionChange(Direction direction)
@@ -111,7 +85,6 @@ public sealed class GameEngine(
     }
 
     // ── Game Loop ──────────────────────────────────────────────────────────
-
     private async Task StartLoopAsync()
     {
         _cts = new CancellationTokenSource();
@@ -137,61 +110,44 @@ public sealed class GameEngine(
             {
                 if (!await _timer.WaitForNextTickAsync(ct))
                     break;
-
                 ProcessTick();
             }
         }
-        catch (OperationCanceledException)
-        {
-            logger.LogDebug("Game loop cancelado");
-        }
+        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Erro inesperado no game loop");
+            Console.Error.WriteLine($"[GameEngine] Erro no game loop: {ex.Message}");
         }
     }
 
     // ── Lógica de Tick ────────────────────────────────────────────────────
-
     private void ProcessTick()
     {
-        if (_snake is null || _grid is null || _status is not GameStatus.Running)
-            return;
+        if (_snake is null || _grid is null || _status is not GameStatus.Running) return;
 
         _tickCount++;
-
-        // 1. Verificar timeout de combo
         scoreService.CheckComboExpiry();
 
-        // 2. Calcular próxima posição da cabeça
         var nextHead = movementService.CalculateNextHead(
-            _snake.Head,
-            _snake.NextDirection,
-            _grid,
-            _settings.WallMode);
+            _snake.Head, _snake.NextDirection, _grid, _settings.WallMode);
 
-        // 3. Verificar colisão com parede
         if (movementService.IsWallCollision(nextHead, _grid, _settings.WallMode))
         {
             TriggerGameOver("Colisão com a parede");
             return;
         }
 
-        // 4. Verificar se é comida ANTES de mover (para lógica de crescimento)
         var collectedFood = _activeFoods.FirstOrDefault(f => f.Position == nextHead);
         bool isEating = collectedFood is not null;
 
-        // 5. Verificar auto-colisão (exceto se vai comer — cauda se moverá)
         if (!isEating && movementService.IsSelfCollision(nextHead, _snake))
         {
             TriggerGameOver("Auto-colisão");
             return;
         }
 
-        // 6. Mover cobra (grow=true se comeu)
         _snake.Move(nextHead, grow: isEating);
 
-        // 7. Processar coleta de comida
         if (isEating && collectedFood is not null)
         {
             _activeFoods.Remove(collectedFood);
@@ -204,27 +160,22 @@ public sealed class GameEngine(
                 scoreService.ScoreBoard.ComboMultiplier,
                 scoreService.ScoreBoard.ComboCount));
 
-            // Aumentar velocidade progressivamente
             AdjustSpeed();
 
-            // Verificar vitória (grid cheio)
             if (_snake.Length >= _grid.TotalCells)
             {
                 TriggerVictory();
                 return;
             }
 
-            // Spawnar nova comida se necessário
             EnsureFoodCount();
         }
 
-        // 8. Disparar evento de tick com snapshot
         var snapshot = BuildSnapshot();
         OnTick?.Invoke(this, new GameTickEventArgs(snapshot));
     }
 
     // ── Inicialização ─────────────────────────────────────────────────────
-
     private void InitializeGame()
     {
         _grid = new GameGrid(_settings.GridWidth, _settings.GridHeight);
@@ -232,23 +183,17 @@ public sealed class GameEngine(
         _activeFoods.Clear();
         _tickCount = 0;
 
-        // Posição inicial: corpo alinhado para a esquerda, cabeça movendo para a direita.
         var initialLength = Math.Clamp(_settings.InitialSnakeLength, 1, _settings.GridWidth);
         var startX = Math.Clamp(_settings.GridWidth / 2, initialLength - 1, _settings.GridWidth - 1);
         var startY = _settings.GridHeight / 2;
-        var startPos = new Position(startX, startY);
 
         var tailStart = new Position(startX - initialLength + 1, startY);
         _snake = new Snake(tailStart, Direction.Right);
 
-        // Pré-popular corpo inicial da cauda até a cabeça.
         for (int x = tailStart.X + 1; x <= startX; x++)
             _snake.Move(new Position(x, startY), grow: true);
 
-        // Spawnar comida inicial
         EnsureFoodCount();
-
-        logger.LogInformation("Jogo inicializado — Snake em {Pos}, {FoodCount} comida(s)", startPos, _activeFoods.Count);
     }
 
     private void EnsureFoodCount()
@@ -260,9 +205,8 @@ public sealed class GameEngine(
             var occupied = _snake.Body.Concat(_activeFoods.Select(f => f.Position));
             var food = foodService.SpawnFood(_grid, occupied);
 
-            if (food.Position.X < 0) break; // Grid lotado
+            if (food.Position.X < 0) break;
 
-            food = food with { Position = food.Position }; // Preservar record imutável com pontos configurados
             var configuredFood = Food.Create(food.Position, _settings.BasePointsPerFood);
             _activeFoods.Add(configuredFood);
 
@@ -276,17 +220,13 @@ public sealed class GameEngine(
             _settings.MinTickIntervalMs,
             _currentTickIntervalMs - _settings.SpeedIncrementMs);
 
-        // Recriar timer com novo intervalo
         _timer?.Dispose();
         _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_currentTickIntervalMs));
-        logger.LogDebug("Velocidade ajustada: {Interval}ms por tick", _currentTickIntervalMs);
     }
 
     // ── Game Over / Vitória ────────────────────────────────────────────────
-
     private void TriggerGameOver(string reason)
     {
-        logger.LogInformation("Game Over: {Reason} | Score: {Score}", reason, scoreService.ScoreBoard.TotalScore);
         ChangeStatus(GameStatus.GameOver);
         var snapshot = BuildSnapshot(reason);
         OnGameOver?.Invoke(this, new GameOverEventArgs(snapshot, reason));
@@ -295,7 +235,6 @@ public sealed class GameEngine(
 
     private void TriggerVictory()
     {
-        logger.LogInformation("Vitória! Score final: {Score}", scoreService.ScoreBoard.TotalScore);
         ChangeStatus(GameStatus.Victory);
         var snapshot = BuildSnapshot("Vitória — grid completo!");
         OnGameOver?.Invoke(this, new GameOverEventArgs(snapshot, "Vitória"));
@@ -303,7 +242,6 @@ public sealed class GameEngine(
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
-
     private void ChangeStatus(GameStatus newStatus)
     {
         var previous = _status;
@@ -313,9 +251,7 @@ public sealed class GameEngine(
 
     private void SubscribeScoreEvents()
     {
-        if (_scoreEventsSubscribed)
-            return;
-
+        if (_scoreEventsSubscribed) return;
         scoreService.OnComboChanged += HandleComboChanged;
         scoreService.OnComboReset += HandleComboReset;
         _scoreEventsSubscribed = true;
@@ -344,7 +280,6 @@ public sealed class GameEngine(
     };
 
     // ── Dispose ───────────────────────────────────────────────────────────
-
     public async ValueTask DisposeAsync()
     {
         if (_scoreEventsSubscribed)
@@ -357,6 +292,5 @@ public sealed class GameEngine(
         await StopLoopAsync();
         _cts?.Dispose();
         _timer?.Dispose();
-        logger.LogDebug("GameEngine disposed");
     }
 }

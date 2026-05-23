@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060e09" />
+    <base href="/" />
+    <link rel="stylesheet" href="css/crt.css" />
+    <link rel="stylesheet" href="css/game.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+    <link rel="stylesheet" href="SnakeClaude.styles.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>Snake Claude</title>
+
+    <!--
+        GitHub Pages SPA redirect: restaura o path que foi codificado pelo 404.html
+    -->
+    <script>
+        (function(l) {
+            if (l.search[1] === '/') {
+                var decoded = l.search.slice(1).split('&').map(function(s) {
+                    return s.replace(/~and~/g, '&');
+                });
+                window.history.replaceState(null, null,
+                    l.pathname.slice(0, -1) + decoded[0] +
+                    (decoded[1] ? '?' + decoded[1] : '') +
+                    l.hash
+                );
+            }
+        }(window.location));
+    </script>
+</head>
+
+<body>
+    <div id="app">
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;
+                    background:#060e09;color:#4a9e5c;font-family:monospace;font-size:1.2rem;">
+            <span class="cursor-blink">CARREGANDO...</span>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui"
+         style="display:none;position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);
+                background:#0c1a11;border:1px solid #2a6640;color:#5aaf7a;
+                font-family:monospace;font-size:0.75rem;padding:0.6rem 1rem;
+                border-radius:4px;z-index:99999;">
+        ⚠ erro — <a href="." style="color:#7ed4a0;">recarregar</a>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/snake-effects.js"></script>
+</body>
+
+</html>
