@@ -38,13 +38,10 @@ jobs:
             -o publish \
             --nologo
 
-      - name: Fix base path para GitHub Pages
-        # O repo NÃO é usuario.github.io → está em /SnakeClaude/
-        # Ajusta o <base href> para o nome correto do repositório
+      - name: Verificar base href
+        # Repo é claraleal-csharp.github.io → servido na raiz → base href="/" está correto
         run: |
-          sed -i 's|<base href="/" />|<base href="/SnakeClaude/" />|g' publish/wwwroot/index.html
-          sed -i 's|var segmentCount = 0|var segmentCount = 1|g' publish/wwwroot/404.html
-          echo "Base path ajustado para /SnakeClaude/"
+          echo "Repo: claraleal-csharp.github.io → base href=/ OK"
           grep 'base href' publish/wwwroot/index.html
 
       - name: Upload artifact para Pages
