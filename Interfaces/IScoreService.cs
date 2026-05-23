@@ -1,4 +1,5 @@
 using SnakeClaude.Models;
+using SnakeClaude.Events;
 
 namespace SnakeClaude.Interfaces;
 
@@ -8,6 +9,9 @@ namespace SnakeClaude.Interfaces;
 public interface IScoreService
 {
     ScoreBoard ScoreBoard { get; }
+
+    event EventHandler<ComboChangedEventArgs>? OnComboChanged;
+    event EventHandler<ComboResetEventArgs>? OnComboReset;
 
     /// <summary>
     /// Processa a coleta de uma comida: verifica combo, adiciona pontos.

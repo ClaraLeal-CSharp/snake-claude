@@ -39,6 +39,7 @@ public sealed class GameEngine(
     private GameStatus _status = GameStatus.Idle;
     private long _tickCount;
     private int _currentTickIntervalMs;
+    private bool _scoreEventsSubscribed;
 
     // ── Game Loop ──────────────────────────────────────────────────────────
     private PeriodicTimer? _timer;
@@ -68,6 +69,7 @@ public sealed class GameEngine(
 
         logger.LogInformation("Iniciando novo jogo — Grid {W}x{H}", _settings.GridWidth, _settings.GridHeight);
 
+        SubscribeScoreEvents();
         InitializeGame();
         ChangeStatus(GameStatus.Running);
         await StartLoopAsync();
@@ -309,6 +311,22 @@ public sealed class GameEngine(
         OnStatusChanged?.Invoke(this, new GameStatusChangedEventArgs(previous, newStatus));
     }
 
+    private void SubscribeScoreEvents()
+    {
+        if (_scoreEventsSubscribed)
+            return;
+
+        scoreService.OnComboChanged += HandleComboChanged;
+        scoreService.OnComboReset += HandleComboReset;
+        _scoreEventsSubscribed = true;
+    }
+
+    private void HandleComboChanged(object? sender, ComboChangedEventArgs e)
+        => OnComboChanged?.Invoke(this, e);
+
+    private void HandleComboReset(object? sender, ComboResetEventArgs e)
+        => OnComboReset?.Invoke(this, e);
+
     private GameStateSnapshot BuildSnapshot(string? gameOverReason = null) => new()
     {
         Status = _status,
@@ -329,6 +347,13 @@ public sealed class GameEngine(
 
     public async ValueTask DisposeAsync()
     {
+        if (_scoreEventsSubscribed)
+        {
+            scoreService.OnComboChanged -= HandleComboChanged;
+            scoreService.OnComboReset -= HandleComboReset;
+            _scoreEventsSubscribed = false;
+        }
+
         await StopLoopAsync();
         _cts?.Dispose();
         _timer?.Dispose();

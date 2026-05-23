@@ -88,6 +88,7 @@
         GameEngine.OnTick          += HandleTick;
         GameEngine.OnGameOver      += HandleGameOver;
         GameEngine.OnFoodCollected += HandleFoodCollected;
+        GameEngine.OnComboReset    += HandleComboReset;
         GameEngine.OnStatusChanged += HandleStatusChanged;
         return Task.CompletedTask;
     }
@@ -156,6 +157,12 @@
                 await JS.InvokeVoidAsync("SnakeEffects.playCombo", e.ComboMultiplier);
             _lastCombo = e.NewComboCount;
         });
+    }
+
+    private void HandleComboReset(object? _, ComboResetEventArgs e)
+    {
+        _lastCombo = 0;
+        InvokeAsync(StateHasChanged);
     }
 
     private void HandleStatusChanged(object? _, GameStatusChangedEventArgs e)
@@ -248,6 +255,7 @@
         GameEngine.OnTick          -= HandleTick;
         GameEngine.OnGameOver      -= HandleGameOver;
         GameEngine.OnFoodCollected -= HandleFoodCollected;
+        GameEngine.OnComboReset    -= HandleComboReset;
         GameEngine.OnStatusChanged -= HandleStatusChanged;
 
         if (_inputModule is not null)
