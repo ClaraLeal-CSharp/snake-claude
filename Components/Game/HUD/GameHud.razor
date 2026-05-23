@@ -1,0 +1,54 @@
+@* GameHud.razor — HUD completo do jogo *@
+@namespace SnakeClaude.Components.Game.HUD
+@using SnakeClaude.State
+
+<div class="hud-top">
+    <HudPanel Label="SCORE"
+              Value="@(Snapshot?.Score.TotalScore.ToString("D6") ?? "000000")"
+              Highlight="@_scoreHighlight" />
+
+    <HudPanel Label="COMBO"
+              Value="@ComboText"
+              Highlight="@(Snapshot?.Score.ComboCount > 1)" />
+
+    <HudPanel Label="MULTI"
+              Value="@($"x{Snapshot?.Score.ComboMultiplier ?? 1}")"
+              Highlight="@(Snapshot?.Score.ComboMultiplier > 1)" />
+
+    <HudPanel Label="BEST"
+              Value="@(_bestScore.ToString("D6"))" />
+</div>
+
+@code {
+    [Parameter] public GameStateSnapshot? Snapshot { get; set; }
+
+    private int _bestScore;
+    private bool _scoreHighlight;
+    private int _lastScore;
+
+    private string ComboText =>
+        Snapshot?.Score.ComboCount > 0
+            ? $"C{Snapshot.Score.ComboCount:D2}"
+            : "---";
+
+    protected override void OnParametersSet()
+    {
+        var current = Snapshot?.Score.TotalScore ?? 0;
+
+        if (current > _lastScore)
+        {
+            _scoreHighlight = true;
+            _ = ClearHighlightAsync();
+        }
+
+        if (current > _bestScore) _bestScore = current;
+        _lastScore = current;
+    }
+
+    private async Task ClearHighlightAsync()
+    {
+        await Task.Delay(400);
+        _scoreHighlight = false;
+        StateHasChanged();
+    }
+}

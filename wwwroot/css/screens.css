@@ -1,0 +1,252 @@
+/* ═══════════════════════════════════════════════════════════════
+   SCREENS.CSS — Telas: início, pausa, game over
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Overlay de tela ─────────────────────────────────────────── */
+.screen-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 14, 9, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  z-index: 100;
+  border-radius: var(--crt-curve);
+  backdrop-filter: blur(2px);
+  animation: fade-in 0.4s ease;
+}
+
+/* ── Título do jogo ──────────────────────────────────────────── */
+.game-title {
+  font-family: var(--font-mono);
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  font-weight: bold;
+  color: var(--phosphor-bright);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px var(--phosphor-green),
+    0 0 20px var(--glow-strong),
+    0 0 40px var(--glow-color);
+  text-align: center;
+}
+
+/* ── Subtítulo ───────────────────────────────────────────────── */
+.game-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ── Botão principal ─────────────────────────────────────────── */
+.btn-crt {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--phosphor-bright);
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  border-radius: 3px;
+  padding: 0.7rem 2rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  min-width: 160px;
+  text-align: center;
+}
+
+.btn-crt::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glow-soft);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.btn-crt:hover {
+  color: var(--bg-black);
+  background: var(--phosphor-green);
+  border-color: var(--phosphor-bright);
+  box-shadow: 0 0 12px var(--glow-color), 0 0 25px var(--glow-soft);
+}
+
+.btn-crt:hover::before { opacity: 1; }
+
+.btn-crt:active { transform: scale(0.97); }
+
+.btn-crt.secondary {
+  font-size: 0.75rem;
+  padding: 0.5rem 1.5rem;
+  color: var(--text-dim);
+  border-color: var(--border-color);
+}
+
+.btn-crt.secondary:hover {
+  color: var(--phosphor-green);
+  background: transparent;
+  border-color: var(--border-bright);
+  box-shadow: 0 0 8px var(--glow-soft);
+}
+
+/* ── Stats de game over ──────────────────────────────────────── */
+.game-over-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.stat-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.6rem;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--text-bright);
+  text-shadow: 0 0 8px var(--glow-color);
+}
+
+/* ── Linha separadora ────────────────────────────────────────── */
+.crt-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+  max-width: 280px;
+}
+
+/* ── Texto de instrução teclas ───────────────────────────────── */
+.key-hints {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.key-hint {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.key-badge {
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  margin-right: 3px;
+  background: var(--bg-surface);
+}
+
+/* ── Animação de game over ───────────────────────────────────── */
+.game-over-title {
+  font-family: var(--font-mono);
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  font-weight: bold;
+  color: #8a4a4a;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(138, 74, 74, 0.5), 0 0 20px rgba(138, 74, 74, 0.3);
+  animation: game-over-flicker 2s ease infinite;
+}
+
+@keyframes game-over-flicker {
+  0%, 90%, 100% { opacity: 1; }
+  92%            { opacity: 0.7; }
+  94%            { opacity: 1; }
+  96%            { opacity: 0.5; }
+  98%            { opacity: 1; }
+}
+
+/* ── Victory ─────────────────────────────────────────────────── */
+.victory-title {
+  font-family: var(--font-mono);
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  font-weight: bold;
+  color: var(--phosphor-bright);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 10px var(--phosphor-bright),
+    0 0 25px var(--glow-strong),
+    0 0 50px var(--glow-color);
+  animation: victory-glow 1.5s ease infinite alternate;
+}
+
+@keyframes victory-glow {
+  from { text-shadow: 0 0 10px var(--phosphor-bright), 0 0 25px var(--glow-color); }
+  to   { text-shadow: 0 0 15px var(--phosphor-bright), 0 0 40px var(--glow-strong), 0 0 60px var(--glow-color); }
+}
+
+/* ── Mobile touch buttons ────────────────────────────────────── */
+.touch-controls {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 240px;
+}
+
+.touch-btn {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--text-dim);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.7rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-btn:active {
+  background: var(--bg-surface);
+  border-color: var(--border-bright);
+  color: var(--phosphor-bright);
+  box-shadow: 0 0 8px var(--glow-soft);
+}
+
+.touch-up    { grid-column: 2; grid-row: 1; }
+.touch-left  { grid-column: 1; grid-row: 2; }
+.touch-down  { grid-column: 2; grid-row: 2; }
+.touch-right { grid-column: 3; grid-row: 2; }
+
+@media (max-width: 640px) or (pointer: coarse) {
+  .touch-controls { display: grid; }
+}
+
+/* ── Responsividade ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .hud-top { grid-template-columns: 1fr 1fr; }
+  .game-over-stats { grid-template-columns: 1fr 1fr; }
+}

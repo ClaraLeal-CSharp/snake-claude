@@ -1,0 +1,72 @@
+@* GameOverScreen.razor — Tela de game over e vitória *@
+@namespace SnakeClaude.Components.Game.Screens
+@using SnakeClaude.Enums
+@using SnakeClaude.State
+
+<div class="screen-overlay fade-in">
+
+    @if (IsVictory)
+    {
+        <div class="victory-title">VITÓRIA!</div>
+        <div class="game-subtitle">MAPA COMPLETADO</div>
+    }
+    else
+    {
+        <div class="game-over-title">GAME OVER</div>
+        @if (!string.IsNullOrEmpty(Reason))
+        {
+            <div class="game-subtitle">@Reason.ToUpper()</div>
+        }
+    }
+
+    <div class="crt-divider"></div>
+
+    @if (FinalSnapshot is not null)
+    {
+        <div class="game-over-stats">
+            <div class="stat-card">
+                <span class="stat-label">Pontuação</span>
+                <span class="stat-value glow">@FinalSnapshot.Score.TotalScore.ToString("D6")</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Max Combo</span>
+                <span class="stat-value">x@FinalSnapshot.Score.MaxCombo</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Tamanho</span>
+                <span class="stat-value">@FinalSnapshot.SnakeBody.Count</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Tempo</span>
+                <span class="stat-value">@FormatTime(ElapsedSeconds)</span>
+            </div>
+        </div>
+    }
+
+    <div class="crt-divider"></div>
+
+    <div style="display:flex; flex-direction:column; gap:0.6rem; align-items:center;">
+        <button class="btn-crt" @onclick="OnRestart">
+            [ REINICIAR ]
+        </button>
+    </div>
+
+    <div class="key-hints">
+        <span class="key-hint"><span class="key-badge">R</span> reiniciar</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public GameStateSnapshot? FinalSnapshot    { get; set; }
+    [Parameter] public string?            Reason           { get; set; }
+    [Parameter] public bool               IsVictory        { get; set; }
+    [Parameter] public int                ElapsedSeconds   { get; set; }
+    [Parameter] public EventCallback      OnRestart        { get; set; }
+
+    private static string FormatTime(int seconds)
+    {
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return m > 0 ? $"{m}m{s:D2}s" : $"{s}s";
+    }
+}

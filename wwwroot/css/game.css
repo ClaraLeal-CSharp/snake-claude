@@ -1,0 +1,232 @@
+/* ═══════════════════════════════════════════════════════════════
+   GAME.CSS — Layout principal da página do jogo
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Página do jogo ──────────────────────────────────────────── */
+.game-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1rem;
+  background: var(--bg-black);
+  gap: 1rem;
+}
+
+/* ── Wrapper do monitor CRT ──────────────────────────────────── */
+.game-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 640px;
+}
+
+/* ── HUD superior ────────────────────────────────────────────── */
+.hud-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+/* ── Painel individual do HUD ────────────────────────────────── */
+.hud-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  transition: border-color var(--transition-fast);
+}
+
+.hud-panel:hover { border-color: var(--border-bright); }
+
+.hud-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.hud-value {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--text-bright);
+  text-shadow: 0 0 8px var(--glow-color);
+  line-height: 1;
+}
+
+.hud-value.combo-active {
+  color: var(--phosphor-bright);
+  animation: combo-pulse 0.4s ease;
+}
+
+@keyframes combo-pulse {
+  0%   { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* ── Grid do jogo ────────────────────────────────────────────── */
+.game-board-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-color);
+  border-radius: var(--crt-curve);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--border-color),
+    inset 0 0 40px rgba(0,0,0,0.6),
+    0 0 30px var(--glow-soft);
+}
+
+.game-grid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 1px;
+  padding: 4px;
+  background: var(--bg-deep);
+}
+
+/* ── Células ─────────────────────────────────────────────────── */
+.cell {
+  border-radius: 2px;
+  background: transparent;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.cell-empty { background: transparent; }
+
+.cell-snake-head {
+  background: var(--phosphor-bright);
+  box-shadow:
+    0 0 4px var(--phosphor-green),
+    0 0 10px var(--glow-color);
+  border-radius: 3px;
+}
+
+.cell-snake-body {
+  background: var(--phosphor-green);
+  box-shadow: 0 0 3px var(--glow-soft);
+  border-radius: 2px;
+  opacity: 0.9;
+}
+
+.cell-snake-tail {
+  background: var(--phosphor-dim);
+  opacity: 0.7;
+  border-radius: 2px;
+}
+
+.cell-food {
+  background: var(--phosphor-bright);
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px var(--phosphor-bright),
+    0 0 14px var(--glow-strong);
+  animation: food-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes food-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--phosphor-bright), 0 0 14px var(--glow-color); }
+  50%       { box-shadow: 0 0 10px var(--phosphor-bright), 0 0 22px var(--glow-strong); }
+}
+
+/* ── HUD inferior (status) ───────────────────────────────────── */
+.hud-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: var(--text-dim);
+}
+
+.status-dot.running  { background: var(--phosphor-bright); box-shadow: 0 0 5px var(--glow-color); animation: dot-blink 1s ease infinite; }
+.status-dot.paused   { background: #8a8a3a; }
+.status-dot.gameover { background: #8a3a3a; }
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Animação entrada célula (cobra crescendo) ───────────────── */
+@keyframes cell-appear {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.cell-snake-head {
+  animation: cell-appear 0.12s ease forwards;
+}
+
+/* ── Pulse na coleta de comida ───────────────────────────────── */
+@keyframes food-collect {
+  0%   { transform: scale(1.6); opacity: 0.8; }
+  100% { transform: scale(0);   opacity: 0; }
+}
+
+/* ── Grade de fundo sutil no board ───────────────────────────── */
+.game-grid::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background-image:
+    linear-gradient(rgba(30, 74, 46, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 74, 46, 0.08) 1px, transparent 1px);
+  background-size: calc(100% / var(--grid-w, 20)) calc(100% / var(--grid-h, 20));
+  pointer-events: none;
+  z-index: 0;
+}
+
+.game-board-container { position: relative; }
+
+/* ── Score flash ao ganhar ponto ──────────────────────────────── */
+@keyframes score-flash {
+  0%   { color: var(--phosphor-bright); text-shadow: 0 0 14px var(--glow-strong); }
+  100% { color: var(--text-bright);     text-shadow: 0 0 8px var(--glow-color);  }
+}
+
+/* ── Responsividade final ────────────────────────────────────── */
+@media (max-width: 400px) {
+  .hud-top          { grid-template-columns: 1fr 1fr; }
+  .hud-value        { font-size: 0.85rem; }
+  .hud-label        { font-size: 0.5rem; }
+  .hud-bottom       { font-size: 0.6rem; }
+  .game-wrapper     { gap: 0.5rem; }
+}
+
+@media (min-width: 900px) {
+  .game-wrapper { max-width: 560px; }
+}
+
+@media (min-width: 1200px) {
+  .game-wrapper { max-width: 620px; }
+}
+
+/* ── Scrollbar oculta na página do jogo ──────────────────────── */
+.game-page { overflow: hidden; }

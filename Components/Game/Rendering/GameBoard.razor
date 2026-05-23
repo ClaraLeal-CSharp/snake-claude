@@ -1,0 +1,89 @@
+@* GameBoard.razor — Renderização do grid + canvas CRT overlay *@
+@namespace SnakeClaude.Components.Game.Rendering
+@using SnakeClaude.Enums
+@using SnakeClaude.Models
+@using SnakeClaude.State
+
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="game-board-container crt-monitor" id="game-board">
+
+    @* Canvas fosfórico CRT — renderizado via JS, pointer-events:none *@
+    <canvas id="crt-noise-canvas"
+            style="position:absolute;inset:0;width:100%;height:100%;
+                   pointer-events:none;z-index:20;opacity:0.65;
+                   border-radius:var(--crt-curve);"></canvas>
+
+    <div class="game-grid"
+         style="grid-template-columns: repeat(@GridWidth, 1fr);
+                grid-template-rows: repeat(@GridHeight, 1fr);
+                position:relative;z-index:1;">
+        @for (int row = 0; row < GridHeight; row++)
+        {
+            @for (int col = 0; col < GridWidth; col++)
+            {
+                var css = GetCellCss(col, row);
+                <div class="cell @css"></div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public GameStateSnapshot? Snapshot   { get; set; }
+    [Parameter] public int                GridWidth  { get; set; } = 20;
+    [Parameter] public int                GridHeight { get; set; } = 20;
+
+    private HashSet<Position>         _foodSet   = [];
+    private HashSet<Position>         _bodySet   = [];
+    private Dictionary<Position, int> _bodyIndex = [];
+    private Position                  _head;
+    private int                       _tailIndex;
+
+    private IJSObjectReference? _crtModule;
+
+    protected override void OnParametersSet()
+    {
+        if (Snapshot is null) return;
+        _foodSet   = [.. Snapshot.FoodPositions];
+        _bodyIndex = [];
+        var body = Snapshot.SnakeBody;
+        for (int i = 0; i < body.Count; i++)
+            _bodyIndex.TryAdd(body[i], i);
+        _bodySet   = [.. _bodyIndex.Keys];
+        _head      = body.Count > 0 ? body[0] : new Position(-1, -1);
+        _tailIndex = body.Count - 1;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _crtModule is not null) return;
+        try
+        {
+            _crtModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/snakeGame.js");
+            await _crtModule.InvokeVoidAsync("initCrt", "crt-noise-canvas");
+        }
+        catch { /* CRT noise é degradação graciosa */ }
+    }
+
+    private string GetCellCss(int x, int y)
+    {
+        var pos = new Position(x, y);
+        if (_foodSet.Contains(pos))  return "cell-food";
+        if (!_bodySet.Contains(pos)) return "cell-empty";
+        if (pos == _head)            return "cell-snake-head";
+        int idx = _bodyIndex.GetValueOrDefault(pos, -1);
+        return idx == _tailIndex ? "cell-snake-tail" : "cell-snake-body";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_crtModule is not null)
+        {
+            try { await _crtModule.InvokeVoidAsync("dispose"); } catch { }
+            await _crtModule.DisposeAsync();
+        }
+    }
+}

@@ -1,0 +1,35 @@
+/* app.css — Estilos globais da aplicação Snake Claude */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    background: #060e09;
+    color: #5aaf7a;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Remove outline padrão e substitui por estilo CRT */
+*:focus { outline: 1px solid rgba(74, 158, 107, 0.4); outline-offset: 2px; }
+*:focus:not(:focus-visible) { outline: none; }
+
+/* Blazor error boundary estilizado */
+.blazor-error-boundary {
+    background: #0c1a11;
+    border: 1px solid #2a6640;
+    padding: 0.8rem 1.2rem;
+    color: #5aaf7a;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border-radius: 4px;
+}
+
+.blazor-error-boundary::after {
+    content: "erro na aplicação.";
+}
+
+/* Scrollbar retrô (para dispositivos que mostram) */
+::-webkit-scrollbar { width: 6px; background: #060e09; }
+::-webkit-scrollbar-thumb { background: #1e4a2e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a6640; }

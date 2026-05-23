@@ -1,0 +1,30 @@
+@* PauseScreen.razor — Tela de pausa *@
+@namespace SnakeClaude.Components.Game.Screens
+
+<div class="screen-overlay fade-in">
+    <div class="game-subtitle">— PAUSADO —</div>
+
+    <div class="game-title glow" style="font-size: clamp(1.2rem, 4vw, 2rem);">
+        PAUSE
+    </div>
+
+    <div class="crt-divider"></div>
+
+    <div style="display:flex; flex-direction:column; gap:0.6rem; align-items:center;">
+        <button class="btn-crt" @onclick="OnResume">
+            [ CONTINUAR ]
+        </button>
+        <button class="btn-crt secondary" @onclick="OnReset">
+            [ REINICIAR ]
+        </button>
+    </div>
+
+    <div class="key-hints">
+        <span class="key-hint"><span class="key-badge">P</span> retomar</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnResume { get; set; }
+    [Parameter] public EventCallback OnReset  { get; set; }
+}

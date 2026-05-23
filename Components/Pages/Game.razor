@@ -1,0 +1,262 @@
+@page "/game"
+@page "/"
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+@using SnakeClaude.Components.Game.HUD
+@using SnakeClaude.Components.Game.Rendering
+@using SnakeClaude.Components.Game.Screens
+@using SnakeClaude.Enums
+@using SnakeClaude.Events
+@using SnakeClaude.Interfaces
+@using SnakeClaude.State
+
+@inject IGameEngine GameEngine
+@inject IJSRuntime  JS
+
+<PageTitle>Snake Claude</PageTitle>
+
+<div class="game-page"
+     @onkeydown="HandleKeyDown"
+     @onkeydown:preventDefault="true"
+     @onkeydown:stopPropagation="true"
+     tabindex="0"
+     id="game-container">
+
+    <div class="game-wrapper">
+
+        <GameHud Snapshot="_snapshot" />
+
+        <div style="position:relative; width:100%;">
+            <GameBoard Snapshot="_snapshot"
+                       GridWidth="@(_snapshot?.GridWidth ?? 20)"
+                       GridHeight="@(_snapshot?.GridHeight ?? 20)" />
+
+            @switch (GameEngine.Status)
+            {
+                case GameStatus.Idle:
+                    <StartScreen OnStart="StartAsync" />
+                    break;
+                case GameStatus.Paused:
+                    <PauseScreen OnResume="ResumeAsync" OnReset="ResetAsync" />
+                    break;
+                case GameStatus.GameOver:
+                    <GameOverScreen FinalSnapshot="_snapshot"
+                                    Reason="@_gameOverReason"
+                                    IsVictory="false"
+                                    ElapsedSeconds="@_elapsedSeconds"
+                                    OnRestart="ResetAsync" />
+                    break;
+                case GameStatus.Victory:
+                    <GameOverScreen FinalSnapshot="_snapshot"
+                                    Reason="@_gameOverReason"
+                                    IsVictory="true"
+                                    ElapsedSeconds="@_elapsedSeconds"
+                                    OnRestart="ResetAsync" />
+                    break;
+            }
+        </div>
+
+        <div class="hud-bottom">
+            <span><span class="status-dot @GetStatusClass()"></span>@GetStatusText()</span>
+            <span>@(_snapshot?.GridWidth ?? 20)×@(_snapshot?.GridHeight ?? 20)</span>
+            <span>@(_snapshot?.CurrentTickIntervalMs ?? 150)ms</span>
+        </div>
+
+        <div class="touch-controls">
+            <button class="touch-btn touch-up"    @onclick="@(() => RequestDirection(Direction.Up))"    aria-label="Cima">▲</button>
+            <button class="touch-btn touch-left"  @onclick="@(() => RequestDirection(Direction.Left))"  aria-label="Esquerda">◄</button>
+            <button class="touch-btn touch-down"  @onclick="@(() => RequestDirection(Direction.Down))"  aria-label="Baixo">▼</button>
+            <button class="touch-btn touch-right" @onclick="@(() => RequestDirection(Direction.Right))" aria-label="Direita">►</button>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private GameStateSnapshot?   _snapshot;
+    private string?              _gameOverReason;
+    private int                  _lastCombo;
+    private DateTime             _gameStartTime;
+    private int                  _elapsedSeconds;
+    private IJSObjectReference?  _inputModule;
+    private DotNetObjectReference<Game>? _selfRef;
+
+    // ── Lifecycle ─────────────────────────────────────────────────
+    protected override Task OnInitializedAsync()
+    {
+        GameEngine.OnTick          += HandleTick;
+        GameEngine.OnGameOver      += HandleGameOver;
+        GameEngine.OnFoodCollected += HandleFoodCollected;
+        GameEngine.OnStatusChanged += HandleStatusChanged;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+
+        // Swipe touch via módulo ES
+        try
+        {
+            _selfRef     = DotNetObjectReference.Create(this);
+            _inputModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/snakeGame.js");
+            await _inputModule.InvokeVoidAsync("initInput", _selfRef);
+        }
+        catch { /* fallback: botões touch já cobrem mobile */ }
+    }
+
+    // ── JSInvokable para swipe ─────────────────────────────────────
+    [JSInvokable]
+    public Task HandleKeyInput(string action)
+    {
+        return action switch
+        {
+            "Up"    => Task.FromResult(RequestDirection(Direction.Up)),
+            "Down"  => Task.FromResult(RequestDirection(Direction.Down)),
+            "Left"  => Task.FromResult(RequestDirection(Direction.Left)),
+            "Right" => Task.FromResult(RequestDirection(Direction.Right)),
+            "Pause" => TogglePauseAsync(),
+            _       => Task.CompletedTask
+        };
+    }
+
+    // ── Event handlers ─────────────────────────────────────────────
+    private void HandleTick(object? _, GameTickEventArgs e)
+    {
+        _snapshot = e.Snapshot;
+        if (_gameStartTime != default)
+            _elapsedSeconds = (int)(DateTime.UtcNow - _gameStartTime).TotalSeconds;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleGameOver(object? _, GameOverEventArgs e)
+    {
+        _snapshot       = e.FinalSnapshot;
+        _gameOverReason = e.Reason;
+        InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            if (e.FinalSnapshot.Status == GameStatus.Victory)
+                await JS.InvokeVoidAsync("SnakeEffects.playVictory");
+            else
+                await JS.InvokeVoidAsync("SnakeEffects.playGameOver");
+            await JS.InvokeVoidAsync("SnakeEffects.triggerGlitch", "game-board");
+        });
+    }
+
+    private void HandleFoodCollected(object? _, FoodCollectedEventArgs e)
+    {
+        InvokeAsync(async () =>
+        {
+            await JS.InvokeVoidAsync("SnakeEffects.playEat");
+            if (e.NewComboCount > _lastCombo && e.NewComboCount > 1)
+                await JS.InvokeVoidAsync("SnakeEffects.playCombo", e.ComboMultiplier);
+            _lastCombo = e.NewComboCount;
+        });
+    }
+
+    private void HandleStatusChanged(object? _, GameStatusChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    // ── Teclado (Blazor onkeydown) ─────────────────────────────────
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Code)
+        {
+            case "ArrowUp"    or "KeyW": RequestDirection(Direction.Up);    break;
+            case "ArrowDown"  or "KeyS": RequestDirection(Direction.Down);  break;
+            case "ArrowLeft"  or "KeyA": RequestDirection(Direction.Left);  break;
+            case "ArrowRight" or "KeyD": RequestDirection(Direction.Right); break;
+            case "KeyP" or "Escape":     await TogglePauseAsync();          break;
+            case "KeyR":                 await ResetAsync();                 break;
+            case "Space" or "Enter":
+                if (GameEngine.Status == GameStatus.Idle) await StartAsync();
+                break;
+        }
+    }
+
+    private object RequestDirection(Direction dir)
+    {
+        if (GameEngine.Status == GameStatus.Running)
+            GameEngine.RequestDirectionChange(dir);
+        return default!;
+    }
+
+    // ── Ações ──────────────────────────────────────────────────────
+    private async Task StartAsync()
+    {
+        _gameOverReason = null;
+        _lastCombo      = 0;
+        _gameStartTime  = DateTime.UtcNow;
+        _elapsedSeconds = 0;
+        await GameEngine.StartAsync();
+        await JS.InvokeVoidAsync("SnakeEffects.playStart");
+        await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+    }
+
+    private async Task ResumeAsync()
+    {
+        await GameEngine.ResumeAsync();
+        await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+    }
+
+    private async Task PauseAsync() => await GameEngine.PauseAsync();
+
+    private async Task TogglePauseAsync()
+    {
+        if      (GameEngine.Status == GameStatus.Running) await PauseAsync();
+        else if (GameEngine.Status == GameStatus.Paused)  await ResumeAsync();
+    }
+
+    private async Task ResetAsync()
+    {
+        await GameEngine.ResetAsync();
+        _snapshot       = null;
+        _gameOverReason = null;
+        _lastCombo      = 0;
+        _gameStartTime  = default;
+        _elapsedSeconds = 0;
+        StateHasChanged();
+        await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+    }
+
+    // ── Helpers visuais ────────────────────────────────────────────
+    private string GetStatusClass() => GameEngine.Status switch
+    {
+        GameStatus.Running                        => "running",
+        GameStatus.Paused                         => "paused",
+        GameStatus.GameOver or GameStatus.Victory => "gameover",
+        _                                         => ""
+    };
+
+    private string GetStatusText() => GameEngine.Status switch
+    {
+        GameStatus.Idle     => "AGUARDANDO",
+        GameStatus.Running  => "EM JOGO",
+        GameStatus.Paused   => "PAUSADO",
+        GameStatus.GameOver => "GAME OVER",
+        GameStatus.Victory  => "VITÓRIA",
+        _                   => "---"
+    };
+
+    // ── Dispose ────────────────────────────────────────────────────
+    public async ValueTask DisposeAsync()
+    {
+        GameEngine.OnTick          -= HandleTick;
+        GameEngine.OnGameOver      -= HandleGameOver;
+        GameEngine.OnFoodCollected -= HandleFoodCollected;
+        GameEngine.OnStatusChanged -= HandleStatusChanged;
+
+        if (_inputModule is not null)
+        {
+            try { await _inputModule.InvokeVoidAsync("dispose"); } catch { }
+            await _inputModule.DisposeAsync();
+        }
+
+        _selfRef?.Dispose();
+        await GameEngine.DisposeAsync();
+    }
+}

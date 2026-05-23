@@ -1,0 +1,30 @@
+@* StartScreen.razor — Tela inicial *@
+@namespace SnakeClaude.Components.Game.Screens
+
+<div class="screen-overlay boot-animation">
+    <div class="game-subtitle">SNAKE CLAUDE</div>
+
+    <div class="game-title cursor-blink glow-strong">SNAKE</div>
+
+    <div class="crt-divider"></div>
+
+    <div style="display:flex; flex-direction:column; gap:0.6rem; align-items:center;">
+        <button class="btn-crt" @onclick="OnStart">
+            [ INICIAR ]
+        </button>
+    </div>
+
+    <div class="key-hints">
+        <span class="key-hint"><span class="key-badge">↑↓←→</span> mover</span>
+        <span class="key-hint"><span class="key-badge">P</span> pausar</span>
+        <span class="key-hint"><span class="key-badge">R</span> reiniciar</span>
+    </div>
+
+    <div class="game-subtitle" style="font-size:0.55rem; opacity:0.5;">
+        v1.0 — .NET 10 BLAZOR
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnStart { get; set; }
+}

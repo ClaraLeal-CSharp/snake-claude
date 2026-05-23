@@ -1,0 +1,173 @@
+/* ═══════════════════════════════════════════════════════════════
+   CRT.CSS — Efeitos de monitor vintage fósforo verde
+   Snake Claude — Estética retrô terminal hacker
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Variáveis de Design ────────────────────────────────────── */
+:root {
+  --phosphor-green:     #4a9e6b;
+  --phosphor-bright:    #6dbf8a;
+  --phosphor-dim:       #2d6b47;
+  --phosphor-darkest:   #1a3d2b;
+  --bg-black:           #060e09;
+  --bg-deep:            #080f0b;
+  --bg-panel:           #0c1a11;
+  --bg-surface:         #0f2016;
+  --border-color:       #1e4a2e;
+  --border-bright:      #2a6640;
+  --text-primary:       #5aaf7a;
+  --text-bright:        #7ed4a0;
+  --text-dim:           #2e6b45;
+  --text-muted:         #1f4a30;
+  --glow-color:         rgba(74, 158, 107, 0.35);
+  --glow-strong:        rgba(74, 158, 107, 0.6);
+  --glow-soft:          rgba(74, 158, 107, 0.15);
+  --scanline-opacity:   0.04;
+  --crt-curve:          8px;
+  --font-mono:          'Courier New', 'Lucida Console', monospace;
+  --transition-fast:    0.15s ease;
+  --transition-mid:     0.3s ease;
+  --transition-slow:    0.6s ease;
+}
+
+/* ── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-black);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  overflow: hidden;
+}
+
+/* ── Efeito CRT Global ──────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Ruído sutil animado */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9997;
+  opacity: 0.4;
+  animation: noise-shift 0.5s steps(2) infinite;
+}
+
+@keyframes noise-shift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-1px, 1px); }
+  50%  { transform: translate(1px, -1px); }
+  75%  { transform: translate(-1px, -1px); }
+  100% { transform: translate(1px, 1px); }
+}
+
+/* ── Container CRT com curvatura ─────────────────────────────── */
+.crt-monitor {
+  position: relative;
+  border-radius: var(--crt-curve);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--border-color),
+    0 0 20px var(--glow-soft),
+    0 0 60px rgba(74, 158, 107, 0.08),
+    inset 0 0 80px rgba(0,0,0,0.4);
+}
+
+/* Vinheta de bordas escurecidas */
+.crt-monitor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+  border-radius: var(--crt-curve);
+}
+
+/* ── Glow Text ───────────────────────────────────────────────── */
+.glow {
+  text-shadow:
+    0 0 4px var(--phosphor-green),
+    0 0 10px var(--glow-color),
+    0 0 20px var(--glow-soft);
+}
+
+.glow-strong {
+  text-shadow:
+    0 0 4px var(--phosphor-bright),
+    0 0 12px var(--glow-strong),
+    0 0 25px var(--glow-color);
+}
+
+.glow-dim {
+  text-shadow: 0 0 6px var(--glow-soft);
+}
+
+/* ── Cursor piscante ─────────────────────────────────────────── */
+.cursor-blink::after {
+  content: '▊';
+  animation: blink 1s step-end infinite;
+  color: var(--phosphor-green);
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Animação de boot ────────────────────────────────────────── */
+@keyframes boot-in {
+  0%   { opacity: 0; transform: scaleY(0.02) scaleX(0.95); filter: blur(8px); }
+  30%  { opacity: 0.8; transform: scaleY(0.05) scaleX(0.98); filter: blur(4px); }
+  60%  { opacity: 1; transform: scaleY(1) scaleX(1); filter: blur(1px); }
+  100% { opacity: 1; transform: scaleY(1) scaleX(1); filter: blur(0); }
+}
+
+.boot-animation {
+  animation: boot-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Fade In/Out ─────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in      { animation: fade-in 0.4s var(--transition-mid) both; }
+.fade-in-up   { animation: fade-in-up 0.5s ease both; }
+
+/* ── Interferência leve (efeito glitch) ──────────────────────── */
+@keyframes glitch {
+  0%   { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 0); }
+  20%  { clip-path: inset(92% 0 1% 0);  transform: translate(2px, 0); }
+  40%  { clip-path: inset(43% 0 1% 0);  transform: translate(-2px, 0); }
+  60%  { clip-path: inset(25% 0 58% 0); transform: translate(2px, 0); }
+  80%  { clip-path: inset(54% 0 7% 0);  transform: translate(0, 0); }
+  100% { clip-path: inset(58% 0 43% 0); transform: translate(-2px, 0); }
+}
