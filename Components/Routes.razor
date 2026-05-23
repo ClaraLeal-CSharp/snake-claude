@@ -1,19 +1,2 @@
-@using Microsoft.AspNetCore.Components.Routing
-@using SnakeClaude.Components.Pages
-
-<Router AppAssembly="typeof(Program).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <LayoutView Layout="typeof(Layout.MainLayout)">
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-                        height:60vh;color:#4a9e5c;font-family:monospace;text-align:center;gap:1rem;">
-                <div style="font-size:2rem;">404</div>
-                <div>PÁGINA NÃO ENCONTRADA</div>
-                <a href="/" style="color:#7ed4a0;text-decoration:none;">[ VOLTAR ]</a>
-            </div>
-        </LayoutView>
-    </NotFound>
-</Router>
+@* Routes.razor — no WASM o roteamento é feito diretamente no App.razor.
+   Este arquivo é mantido para compatibilidade mas não é referenciado. *@
