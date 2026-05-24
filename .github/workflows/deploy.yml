@@ -28,6 +28,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Restore dependencies
         run: dotnet restore SnakeClaude.csproj
 
@@ -38,10 +41,30 @@ jobs:
             -o publish \
             --nologo
 
-      - name: Verificar base href
-        # Repo é claraleal-csharp.github.io → servido na raiz → base href="/" está correto
+      - name: Ajustar base path para GitHub Pages
+        shell: bash
         run: |
-          echo "Repo: claraleal-csharp.github.io → base href=/ OK"
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          if [[ "$repo_name" == *.github.io ]]; then
+            base_path="/"
+            segment_count="0"
+          else
+            base_path="/${repo_name}/"
+            segment_count="1"
+          fi
+
+          sed -i "s|<base href=\"/\" />|<base href=\"${base_path}\" />|" publish/wwwroot/index.html
+          sed -i "s|var segmentCount = 0;|var segmentCount = ${segment_count};|" publish/wwwroot/404.html
+
+          echo "Base path: ${base_path}"
+          echo "SPA segment count: ${segment_count}"
+
+      - name: Verificar base href
+        # Repos *.github.io sao servidos na raiz; outros repos sao servidos em /nome-do-repo/.
+        run: |
+          test -f publish/wwwroot/index.html
+          test -f publish/wwwroot/_framework/blazor.webassembly.js
+          test -f publish/wwwroot/.nojekyll
           grep 'base href' publish/wwwroot/index.html
 
       - name: Upload artifact para Pages
