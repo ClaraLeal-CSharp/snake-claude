@@ -1,5 +1,7 @@
 @* StartScreen.razor — Tela inicial *@
 @namespace SnakeClaude.Components.Game.Screens
+@using SnakeClaude.Configuration
+@using SnakeClaude.Enums
 
 <div class="screen-overlay boot-animation">
     <div class="game-subtitle">SNAKE CLAUDE</div>
@@ -8,7 +10,38 @@
 
     <div class="crt-divider"></div>
 
-    <div style="display:flex; flex-direction:column; gap:0.6rem; align-items:center;">
+    <section class="difficulty-selector" aria-labelledby="difficulty-title">
+        <div id="difficulty-title" class="difficulty-title">DIFICULDADE</div>
+
+        <div class="difficulty-options" role="radiogroup" aria-label="Selecionar dificuldade">
+            @foreach (var config in DifficultyConfigs)
+            {
+                var isSelected = config.Level == SelectedDifficulty;
+
+                <button type="button"
+                        class="difficulty-option @(isSelected ? "active" : "")"
+                        role="radio"
+                        aria-checked="@isSelected"
+                        aria-label="@($"{config.DisplayName}: {config.Description}")"
+                        @onclick="@(() => SelectDifficulty(config.Level))">
+                    <span class="difficulty-name">@config.DisplayName</span>
+                    <span class="difficulty-desc">@config.Description</span>
+                </button>
+            }
+        </div>
+
+        @if (SelectedConfig is not null)
+        {
+            <div class="difficulty-preview" aria-live="polite">
+                <span>@SelectedConfig.GridWidth×@SelectedConfig.GridHeight</span>
+                <span>@SelectedConfig.InitialTickIntervalMs ms</span>
+                <span>ACC @((SelectedConfig.AccelerationIntervalMs / 1000.0).ToString("0.#"))s</span>
+                <span>MAX @SelectedConfig.MinTickIntervalMs ms</span>
+            </div>
+        }
+    </section>
+
+    <div class="start-actions">
         <button class="btn-crt" @onclick="OnStart">
             [ INICIAR ]
         </button>
@@ -16,6 +49,7 @@
 
     <div class="key-hints">
         <span class="key-hint"><span class="key-badge">↑↓←→</span> mover</span>
+        <span class="key-hint"><span class="key-badge">1-3</span> dificuldade</span>
         <span class="key-hint"><span class="key-badge">P</span> pausar</span>
         <span class="key-hint"><span class="key-badge">R</span> reiniciar</span>
     </div>
@@ -27,4 +61,13 @@
 
 @code {
     [Parameter] public EventCallback OnStart { get; set; }
+    [Parameter] public DifficultyLevel SelectedDifficulty { get; set; } = DifficultyLevel.Normal;
+    [Parameter] public IReadOnlyList<DifficultyConfig> DifficultyConfigs { get; set; } = [];
+    [Parameter] public EventCallback<DifficultyLevel> OnDifficultyChanged { get; set; }
+
+    private DifficultyConfig? SelectedConfig =>
+        DifficultyConfigs.FirstOrDefault(config => config.Level == SelectedDifficulty);
+
+    private Task SelectDifficulty(DifficultyLevel difficulty)
+        => OnDifficultyChanged.InvokeAsync(difficulty);
 }

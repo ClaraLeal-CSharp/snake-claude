@@ -25,7 +25,9 @@ public interface IGameEngine : IAsyncDisposable
     event EventHandler<ComboResetEventArgs> OnComboReset;
 
     // ── Controle ───────────────────────────────────────────────────────────
+    void SetDifficulty(DifficultyLevel difficulty);
     Task StartAsync();
+    Task StartAsync(DifficultyLevel difficulty);
     Task PauseAsync();
     Task ResumeAsync();
     Task ResetAsync();

@@ -13,6 +13,7 @@ namespace SnakeClaude.Engine;
 /// </summary>
 public sealed class GameEngine(
     GameSettings settings,
+    IDifficultySettingsService difficultySettingsService,
     IMovementService movementService,
     IFoodService foodService,
     IScoreService scoreService) : IGameEngine
@@ -27,6 +28,8 @@ public sealed class GameEngine(
     private long _tickCount;
     private int _currentTickIntervalMs;
     private bool _scoreEventsSubscribed;
+    private DifficultyLevel _difficultyLevel = DifficultyLevel.Normal;
+    private DateTime _lastAccelerationAtUtc;
 
     // ── Game Loop ──────────────────────────────────────────────────────────
     private PeriodicTimer? _timer;
@@ -47,13 +50,28 @@ public sealed class GameEngine(
     public GameStateSnapshot CurrentSnapshot => BuildSnapshot();
 
     // ── Controle do Jogo ───────────────────────────────────────────────────
+    public void SetDifficulty(DifficultyLevel difficulty)
+    {
+        if (_status is GameStatus.Running or GameStatus.Paused) return;
+
+        _difficultyLevel = difficulty;
+        difficultySettingsService.ApplyTo(_settings, difficulty);
+    }
+
     public async Task StartAsync()
     {
         if (_status is GameStatus.Running) return;
+        SetDifficulty(_difficultyLevel);
         SubscribeScoreEvents();
         InitializeGame();
         ChangeStatus(GameStatus.Running);
         await StartLoopAsync();
+    }
+
+    public Task StartAsync(DifficultyLevel difficulty)
+    {
+        SetDifficulty(difficulty);
+        return StartAsync();
     }
 
     public async Task PauseAsync()
@@ -127,6 +145,7 @@ public sealed class GameEngine(
 
         _tickCount++;
         scoreService.CheckComboExpiry();
+        ApplyTimedAcceleration();
 
         var nextHead = movementService.CalculateNextHead(
             _snake.Head, _snake.NextDirection, _grid, _settings.WallMode);
@@ -160,8 +179,6 @@ public sealed class GameEngine(
                 scoreService.ScoreBoard.ComboMultiplier,
                 scoreService.ScoreBoard.ComboCount));
 
-            AdjustSpeed();
-
             if (_snake.Length >= _grid.TotalCells)
             {
                 TriggerVictory();
@@ -180,6 +197,7 @@ public sealed class GameEngine(
     {
         _grid = new GameGrid(_settings.GridWidth, _settings.GridHeight);
         _currentTickIntervalMs = _settings.TickIntervalMs;
+        _lastAccelerationAtUtc = DateTime.UtcNow;
         _activeFoods.Clear();
         _tickCount = 0;
 
@@ -214,12 +232,26 @@ public sealed class GameEngine(
         }
     }
 
+    private void ApplyTimedAcceleration()
+    {
+        if (_settings.AccelerationIntervalMs <= 0) return;
+
+        var elapsed = (DateTime.UtcNow - _lastAccelerationAtUtc).TotalMilliseconds;
+        if (elapsed < _settings.AccelerationIntervalMs) return;
+
+        _lastAccelerationAtUtc = DateTime.UtcNow;
+        AdjustSpeed();
+    }
+
     private void AdjustSpeed()
     {
-        _currentTickIntervalMs = Math.Max(
+        var nextInterval = Math.Max(
             _settings.MinTickIntervalMs,
             _currentTickIntervalMs - _settings.SpeedIncrementMs);
 
+        if (nextInterval == _currentTickIntervalMs) return;
+
+        _currentTickIntervalMs = nextInterval;
         _timer?.Dispose();
         _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_currentTickIntervalMs));
     }
@@ -276,7 +308,8 @@ public sealed class GameEngine(
         Timestamp = DateTime.UtcNow,
         GameOverReason = gameOverReason,
         WallMode = _settings.WallMode,
-        CurrentTickIntervalMs = _currentTickIntervalMs
+        CurrentTickIntervalMs = _currentTickIntervalMs,
+        Difficulty = _difficultyLevel
     };
 
     // ── Dispose ───────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<div class="game-board-container crt-monitor" id="game-board">
+<div class="game-board-container crt-monitor" id="game-board" style="aspect-ratio:@GridWidth / @GridHeight;">
 
     @* Canvas fosfórico CRT — renderizado via JS, pointer-events:none *@
     <canvas id="crt-noise-canvas"
@@ -18,6 +18,8 @@
     <div class="game-grid"
          style="grid-template-columns: repeat(@GridWidth, 1fr);
                 grid-template-rows: repeat(@GridHeight, 1fr);
+                --grid-w:@GridWidth;
+                --grid-h:@GridHeight;
                 position:relative;z-index:1;">
         @for (int row = 0; row < GridHeight; row++)
         {

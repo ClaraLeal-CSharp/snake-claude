@@ -11,6 +11,7 @@
 @using SnakeClaude.State
 
 @inject IGameEngine GameEngine
+@inject IDifficultySettingsService DifficultySettings
 @inject IJSRuntime  JS
 
 <PageTitle>Snake Claude</PageTitle>
@@ -28,13 +29,16 @@
 
         <div style="position:relative; width:100%;">
             <GameBoard Snapshot="_snapshot"
-                       GridWidth="@(_snapshot?.GridWidth ?? 20)"
-                       GridHeight="@(_snapshot?.GridHeight ?? 20)" />
+                       GridWidth="@(_snapshot?.GridWidth ?? IdleConfig.GridWidth)"
+                       GridHeight="@(_snapshot?.GridHeight ?? IdleConfig.GridHeight)" />
 
             @switch (GameEngine.Status)
             {
                 case GameStatus.Idle:
-                    <StartScreen OnStart="StartAsync" />
+                    <StartScreen OnStart="StartAsync"
+                                 SelectedDifficulty="_selectedDifficulty"
+                                 DifficultyConfigs="_difficultyConfigs"
+                                 OnDifficultyChanged="SelectDifficultyAsync" />
                     break;
                 case GameStatus.Paused:
                     <PauseScreen OnResume="ResumeAsync" OnReset="ResetAsync" />
@@ -58,8 +62,9 @@
 
         <div class="hud-bottom">
             <span><span class="status-dot @GetStatusClass()"></span>@GetStatusText()</span>
-            <span>@(_snapshot?.GridWidth ?? 20)×@(_snapshot?.GridHeight ?? 20)</span>
-            <span>@(_snapshot?.CurrentTickIntervalMs ?? 150)ms</span>
+            <span>@(_snapshot?.GridWidth ?? IdleConfig.GridWidth)×@(_snapshot?.GridHeight ?? IdleConfig.GridHeight)</span>
+            <span>@IdleConfig.DisplayName.ToUpperInvariant()</span>
+            <span>@(_snapshot?.CurrentTickIntervalMs ?? IdleConfig.InitialTickIntervalMs)ms</span>
         </div>
 
         <div class="touch-controls">
@@ -80,6 +85,15 @@
     private int                  _elapsedSeconds;
     private IJSObjectReference?  _inputModule;
     private DotNetObjectReference<Game>? _selfRef;
+    private DifficultyLevel      _selectedDifficulty = DifficultyLevel.Normal;
+    private IReadOnlyList<SnakeClaude.Configuration.DifficultyConfig> _difficultyConfigs = [];
+
+    private const string DifficultyStorageKey = "snakeclaude:difficulty";
+
+    private SnakeClaude.Configuration.DifficultyConfig IdleConfig =>
+        _snapshot is null
+            ? DifficultySettings.GetConfig(_selectedDifficulty)
+            : DifficultySettings.GetConfig(_snapshot.Difficulty);
 
     // ── Lifecycle ─────────────────────────────────────────────────
     protected override Task OnInitializedAsync()
@@ -89,6 +103,8 @@
         GameEngine.OnFoodCollected += HandleFoodCollected;
         GameEngine.OnComboReset    += HandleComboReset;
         GameEngine.OnStatusChanged += HandleStatusChanged;
+        _difficultyConfigs = DifficultySettings.GetAll();
+        GameEngine.SetDifficulty(_selectedDifficulty);
         return Task.CompletedTask;
     }
 
@@ -97,6 +113,7 @@
         if (!firstRender) return;
 
         await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+        await RestoreDifficultyAsync();
 
         // Swipe touch via módulo ES
         try
@@ -178,6 +195,9 @@
             case "ArrowRight" or "KeyD": RequestDirection(Direction.Right); break;
             case "KeyP" or "Escape":     await TogglePauseAsync();          break;
             case "KeyR":                 await ResetAsync();                 break;
+            case "Digit1" or "Numpad1":  await SelectDifficultyAsync(DifficultyLevel.Easy); break;
+            case "Digit2" or "Numpad2":  await SelectDifficultyAsync(DifficultyLevel.Normal); break;
+            case "Digit3" or "Numpad3":  await SelectDifficultyAsync(DifficultyLevel.Hard); break;
             case "Space" or "Enter":
                 if (GameEngine.Status == GameStatus.Idle) await StartAsync();
                 break;
@@ -198,7 +218,7 @@
         _lastCombo      = 0;
         _gameStartTime  = DateTime.UtcNow;
         _elapsedSeconds = 0;
-        await GameEngine.StartAsync();
+        await GameEngine.StartAsync(_selectedDifficulty);
         await JS.InvokeVoidAsync("SnakeEffects.playStart");
         await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
     }
@@ -227,6 +247,48 @@
         _elapsedSeconds = 0;
         StateHasChanged();
         await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
+    }
+
+    private async Task SelectDifficultyAsync(DifficultyLevel difficulty)
+    {
+        if (GameEngine.Status is not GameStatus.Idle) return;
+
+        _selectedDifficulty = difficulty;
+        DifficultySettings.Select(difficulty);
+        GameEngine.SetDifficulty(difficulty);
+        await PersistDifficultyAsync(difficulty);
+        StateHasChanged();
+
+        try
+        {
+            await JS.InvokeVoidAsync("SnakeEffects.triggerGlitch", "game-board");
+        }
+        catch { }
+    }
+
+    private async Task RestoreDifficultyAsync()
+    {
+        try
+        {
+            var stored = await JS.InvokeAsync<string?>("localStorage.getItem", DifficultyStorageKey);
+            if (Enum.TryParse<DifficultyLevel>(stored, ignoreCase: true, out var difficulty))
+            {
+                _selectedDifficulty = difficulty;
+                DifficultySettings.Select(difficulty);
+                GameEngine.SetDifficulty(difficulty);
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private async Task PersistDifficultyAsync(DifficultyLevel difficulty)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", DifficultyStorageKey, difficulty.ToString());
+        }
+        catch { }
     }
 
     // ── Helpers visuais ────────────────────────────────────────────

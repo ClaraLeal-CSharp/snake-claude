@@ -17,12 +17,15 @@ builder.Services.AddSingleton(new GameSettings
     GridHeight         = 20,
     TickIntervalMs     = 150,
     MinTickIntervalMs  = 50,
+    AccelerationIntervalMs = 7000,
     SpeedIncrementMs   = 5,
     InitialSnakeLength = 3,
     WallMode           = SnakeClaude.Enums.WallMode.Solid,
     BasePointsPerFood  = 10,
+    PointMultiplier    = 1,
     ComboWindowMs      = 3000,
     MaxComboMultiplier = 5,
+    ComboMultiplier    = 1,
     MaxFoodItems       = 1,
     MaxPlayers         = 1
 });
@@ -30,6 +33,7 @@ builder.Services.AddSingleton(new GameSettings
 // ── Serviços do Jogo ───────────────────────────────────────────────────────
 builder.Services.AddSingleton<IMovementService, MovementService>();
 builder.Services.AddSingleton<IFoodService, FoodService>();
+builder.Services.AddSingleton<IDifficultySettingsService, DifficultySettingsService>();
 builder.Services.AddScoped<IScoreService, ScoreService>();
 builder.Services.AddScoped<IGameEngine, GameEngine>();
 

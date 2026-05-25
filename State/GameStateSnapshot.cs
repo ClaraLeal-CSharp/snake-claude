@@ -49,4 +49,7 @@ public record GameStateSnapshot
 
     /// <summary>Intervalo de tick atual em ms (reflete velocidade atual).</summary>
     public int CurrentTickIntervalMs { get; init; }
+
+    /// <summary>Dificuldade aplicada na partida atual.</summary>
+    public DifficultyLevel Difficulty { get; init; } = DifficultyLevel.Normal;
 }

@@ -21,8 +21,11 @@ public class ScoreService(GameSettings settings) : IScoreService
     public int ProcessFoodCollection(int basePoints)
     {
         CheckComboExpiry();
-        ScoreBoard.IncrementCombo(_settings.MaxComboMultiplier);
-        var earned = ScoreBoard.AddScore(basePoints);
+        var maxCombo = Math.Max(1, (int)Math.Round(_settings.MaxComboMultiplier * _settings.ComboMultiplier));
+        var scaledPoints = Math.Max(1, (int)Math.Round(basePoints * _settings.PointMultiplier));
+
+        ScoreBoard.IncrementCombo(maxCombo);
+        var earned = ScoreBoard.AddScore(scaledPoints);
         OnComboChanged?.Invoke(this, new ComboChangedEventArgs(
             ScoreBoard.ComboMultiplier,
             ScoreBoard.ComboCount));

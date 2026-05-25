@@ -26,7 +26,12 @@ public class GameSettings
     public int MinTickIntervalMs { get; set; } = 50;
 
     /// <summary>
-    /// Redução de ms por comida coletada (acelera o jogo progressivamente).
+    /// Tempo entre aceleracoes automaticas em milissegundos.
+    /// </summary>
+    public int AccelerationIntervalMs { get; set; } = 7000;
+
+    /// <summary>
+    /// Reducao de ms a cada aceleracao progressiva.
     /// </summary>
     public int SpeedIncrementMs { get; set; } = 5;
 
@@ -42,12 +47,18 @@ public class GameSettings
     /// <summary>Pontos base por comida coletada.</summary>
     public int BasePointsPerFood { get; set; } = 10;
 
+    /// <summary>Multiplicador de pontuacao aplicado pela dificuldade.</summary>
+    public double PointMultiplier { get; set; } = 1;
+
     // ── Combo ──────────────────────────────────────────────────────────────
     /// <summary>Janela de tempo (em ms) para manter o combo ativo.</summary>
     public int ComboWindowMs { get; set; } = 3000;
 
     /// <summary>Multiplicador máximo atingível pelo combo.</summary>
     public int MaxComboMultiplier { get; set; } = 5;
+
+    /// <summary>Multiplicador de teto do combo aplicado pela dificuldade.</summary>
+    public double ComboMultiplier { get; set; } = 1;
 
     // ── Comida ─────────────────────────────────────────────────────────────
     /// <summary>Número de itens de comida simultâneos no mapa.</summary>
