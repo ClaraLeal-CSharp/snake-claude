@@ -30,7 +30,7 @@
             </div>
             <div class="stat-card">
                 <span class="stat-label">Max Combo</span>
-                <span class="stat-value">x@FinalSnapshot.Score.MaxCombo</span>
+                <span class="stat-value">@MaxComboText</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">Tamanho</span>
@@ -62,6 +62,8 @@
     [Parameter] public bool               IsVictory        { get; set; }
     [Parameter] public int                ElapsedSeconds   { get; set; }
     [Parameter] public EventCallback      OnRestart        { get; set; }
+
+    private string MaxComboText => $"x{FinalSnapshot?.Score.MaxCombo ?? 0}";
 
     private static string FormatTime(int seconds)
     {
