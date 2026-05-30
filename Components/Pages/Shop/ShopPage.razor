@@ -1,0 +1,192 @@
+@* ShopPage.razor — Página principal da loja *@
+@page "/shop"
+@implements IAsyncDisposable
+
+@using SnakeClaude.Components.Shop
+@using SnakeClaude.DTOs.Shop
+@using SnakeClaude.Enums
+@using SnakeClaude.Interfaces.Shop
+
+@inject ICurrencyService Currency
+@inject IShopService Shop
+@inject IJSRuntime JS
+
+<PageTitle>Loja — Snake Claude</PageTitle>
+
+<div class="shop-page fade-in">
+
+    <div class="shop-wrapper">
+
+        @* ── Header ─────────────────────────────────────── *@
+        <div class="shop-header">
+            <div class="shop-title-block">
+                <span class="shop-label">SISTEMA</span>
+                <h1 class="shop-title glow">SNAKE SHOP</h1>
+                <span class="shop-subtitle cursor-blink">selecione um item</span>
+            </div>
+            <div class="shop-wallet">
+                <span class="wallet-label">SNAKE BITES</span>
+                <span class="wallet-balance glow @(_balancePulse ? "balance-pulse" : "")">
+                    ⬡ @_balance
+                </span>
+            </div>
+        </div>
+
+        <div class="crt-divider-full"></div>
+
+        @* ── Abas ────────────────────────────────────────── *@
+        <div class="shop-tabs">
+            <button class="shop-tab @(_activeTab == ShopCategory.Cosmetics ? "active" : "")"
+                    @onclick="@(() => SetTab(ShopCategory.Cosmetics))">
+                <span class="tab-icon">◈</span>
+                <span class="tab-label">COSMÉTICOS</span>
+            </button>
+            <button class="shop-tab @(_activeTab == ShopCategory.Items ? "active" : "")"
+                    @onclick="@(() => SetTab(ShopCategory.Items))">
+                <span class="tab-icon">⬡</span>
+                <span class="tab-label">ITENS</span>
+            </button>
+            <button class="shop-tab @(_activeTab == ShopCategory.GameModes ? "active" : "")"
+                    @onclick="@(() => SetTab(ShopCategory.GameModes))">
+                <span class="tab-icon">▶</span>
+                <span class="tab-label">MODOS</span>
+            </button>
+            <button class="shop-tab @(_activeTab == ShopCategory.Themes ? "active" : "")"
+                    @onclick="@(() => SetTab(ShopCategory.Themes))">
+                <span class="tab-icon">◌</span>
+                <span class="tab-label">TEMAS</span>
+            </button>
+        </div>
+
+        @* ── Grid de Itens + Detalhe ─────────────────────── *@
+        <div class="shop-body">
+            <div class="shop-items-grid">
+                @foreach (var item in _items)
+                {
+                    <ShopItemCard Item="item"
+                                  IsSelected="@(_selectedItem?.Id == item.Id)"
+                                  OnSelect="@(() => SelectItem(item))" />
+                }
+            </div>
+
+            @if (_selectedItem is not null)
+            {
+                <ShopItemDetail Item="_selectedItem"
+                                Balance="_balance"
+                                IsPurchasing="_isPurchasing"
+                                FeedbackMessage="_feedbackMessage"
+                                FeedbackIsError="_feedbackIsError"
+                                OnPurchase="PurchaseAsync"
+                                OnEquip="EquipItem" />
+            }
+            else
+            {
+                <div class="shop-detail-empty">
+                    <span class="detail-empty-icon">◎</span>
+                    <span class="detail-empty-text">selecione um item</span>
+                </div>
+            }
+        </div>
+
+        @* ── Footer ──────────────────────────────────────── *@
+        <div class="shop-footer">
+            <span>⬡ 50 pts = 1 Snake Bite</span>
+            <a class="shop-back-link" href="/">← VOLTAR AO JOGO</a>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private ShopCategory _activeTab  = ShopCategory.Cosmetics;
+    private List<ShopItemDto> _items = [];
+    private ShopItemDto? _selectedItem;
+    private int _balance;
+    private bool _balancePulse;
+    private bool _isPurchasing;
+    private string? _feedbackMessage;
+    private bool _feedbackIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Currency.OnBalanceChanged += HandleBalanceChanged;
+        Shop.OnInventoryChanged   += HandleInventoryChanged;
+        await Currency.LoadAsync();
+        await Shop.LoadInventoryAsync();
+        Shop.EnsureDefaults();
+        _balance = Currency.Balance;
+        RefreshItems();
+    }
+
+    private void SetTab(ShopCategory tab)
+    {
+        _activeTab   = tab;
+        _selectedItem = null;
+        _feedbackMessage = null;
+        RefreshItems();
+    }
+
+    private void SelectItem(ShopItemDto item)
+    {
+        _selectedItem    = item;
+        _feedbackMessage = null;
+        StateHasChanged();
+    }
+
+    private void RefreshItems()
+    {
+        _items = Shop.GetItemsByCategory(_activeTab).ToList();
+        StateHasChanged();
+    }
+
+    private async Task PurchaseAsync(string itemId)
+    {
+        if (_isPurchasing) return;
+        _isPurchasing    = true;
+        _feedbackMessage = null;
+        StateHasChanged();
+
+        var result = await Shop.PurchaseAsync(itemId);
+        _feedbackMessage = result.Message;
+        _feedbackIsError = !result.Success;
+        _balance         = Currency.Balance;
+        if (result.Success) RefreshItems();
+        _isPurchasing = false;
+        StateHasChanged();
+
+        if (result.Success) await TriggerBalancePulse();
+    }
+
+    private void EquipItem(string itemId)
+    {
+        Shop.ToggleEquip(itemId);
+        RefreshItems();
+        if (_selectedItem is not null)
+            _selectedItem = _items.FirstOrDefault(i => i.Id == _selectedItem.Id);
+    }
+
+    private void HandleBalanceChanged(object? _, int newBalance)
+    {
+        _balance = newBalance;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleInventoryChanged(object? _, EventArgs __)
+        => InvokeAsync(RefreshItems);
+
+    private async Task TriggerBalancePulse()
+    {
+        _balancePulse = true;
+        StateHasChanged();
+        await Task.Delay(600);
+        _balancePulse = false;
+        StateHasChanged();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Currency.OnBalanceChanged -= HandleBalanceChanged;
+        Shop.OnInventoryChanged   -= HandleInventoryChanged;
+        return ValueTask.CompletedTask;
+    }
+}

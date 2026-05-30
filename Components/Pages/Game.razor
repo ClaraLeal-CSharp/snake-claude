@@ -5,23 +5,32 @@
 @using SnakeClaude.Components.Game.HUD
 @using SnakeClaude.Components.Game.Rendering
 @using SnakeClaude.Components.Game.Screens
+@using SnakeClaude.Components.Shop
 @using SnakeClaude.Enums
 @using SnakeClaude.Events
 @using SnakeClaude.Interfaces
+@using SnakeClaude.Interfaces.Shop
 @using SnakeClaude.State
 
 @inject IGameEngine GameEngine
 @inject IDifficultySettingsService DifficultySettings
+@inject ICurrencyService Currency
+@inject IShopService Shop
 @inject IJSRuntime  JS
 
 <PageTitle>Snake Claude</PageTitle>
 
-<div class="game-page"
+<div class="game-page @_activeThemeCssClass @GetGameplayThemeClass()"
      @onkeydown="HandleKeyDown"
      @onkeydown:preventDefault="true"
      @onkeydown:stopPropagation="true"
      tabindex="0"
      id="game-container">
+
+    @if (_activeThemeCssClass == "theme-frutiger-aero")
+    {
+        <FrutigerAeroLayer />
+    }
 
     <div class="game-wrapper">
 
@@ -65,7 +74,10 @@
             <span>@(_snapshot?.GridWidth ?? IdleConfig.GridWidth)×@(_snapshot?.GridHeight ?? IdleConfig.GridHeight)</span>
             <span>@IdleConfig.DisplayName.ToUpperInvariant()</span>
             <span>@(_snapshot?.CurrentTickIntervalMs ?? IdleConfig.InitialTickIntervalMs)ms</span>
+            <a class="shop-link-hud" href="/shop">LOJA</a>
         </div>
+        <CurrencyEarnedToast @ref="_currencyToast" />
+
 
         <div class="touch-controls">
             <button class="touch-btn touch-up"    @onclick="@(() => RequestDirection(Direction.Up))"    aria-label="Cima">▲</button>
@@ -87,6 +99,8 @@
     private DotNetObjectReference<Game>? _selfRef;
     private DifficultyLevel      _selectedDifficulty = DifficultyLevel.Normal;
     private IReadOnlyList<SnakeClaude.Configuration.DifficultyConfig> _difficultyConfigs = [];
+    private CurrencyEarnedToast? _currencyToast;
+    private string?               _activeThemeCssClass;
 
     private const string DifficultyStorageKey = "snakeclaude:difficulty";
 
@@ -103,6 +117,7 @@
         GameEngine.OnFoodCollected += HandleFoodCollected;
         GameEngine.OnComboReset    += HandleComboReset;
         GameEngine.OnStatusChanged += HandleStatusChanged;
+        Shop.OnInventoryChanged    += HandleInventoryChanged;
         _difficultyConfigs = DifficultySettings.GetAll();
         GameEngine.SetDifficulty(_selectedDifficulty);
         return Task.CompletedTask;
@@ -114,6 +129,11 @@
 
         await JS.InvokeVoidAsync("SnakeEffects.focusGame", "game-container");
         await RestoreDifficultyAsync();
+        await Currency.LoadAsync();
+        await Shop.LoadInventoryAsync();
+        Shop.EnsureDefaults();
+        RefreshActiveTheme();
+        StateHasChanged();
 
         // Swipe touch via módulo ES
         try
@@ -155,12 +175,16 @@
         _gameOverReason = e.Reason;
         InvokeAsync(async () =>
         {
+            var conversion = Currency.ConvertPoints(e.FinalSnapshot.Score.TotalScore);
+            await Currency.SaveAsync();
             StateHasChanged();
             if (e.FinalSnapshot.Status == GameStatus.Victory)
                 await JS.InvokeVoidAsync("SnakeEffects.playVictory");
             else
                 await JS.InvokeVoidAsync("SnakeEffects.playGameOver");
             await JS.InvokeVoidAsync("SnakeEffects.triggerGlitch", "game-board");
+            if (_currencyToast is not null)
+                await _currencyToast.ShowAsync(conversion);
         });
     }
 
@@ -183,6 +207,13 @@
 
     private void HandleStatusChanged(object? _, GameStatusChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
+
+    private void HandleInventoryChanged(object? _, EventArgs e)
+        => InvokeAsync(() =>
+        {
+            RefreshActiveTheme();
+            StateHasChanged();
+        });
 
     // ── Teclado (Blazor onkeydown) ─────────────────────────────────
     private async Task HandleKeyDown(KeyboardEventArgs e)
@@ -291,7 +322,13 @@
         catch { }
     }
 
+    private void RefreshActiveTheme()
+        => _activeThemeCssClass = Shop.GetActiveThemeCssClass();
+
     // ── Helpers visuais ────────────────────────────────────────────
+    private string GetGameplayThemeClass()
+        => GameEngine.Status == GameStatus.Running ? "theme-gameplay-active" : "";
+
     private string GetStatusClass() => GameEngine.Status switch
     {
         GameStatus.Running                        => "running",
@@ -318,6 +355,7 @@
         GameEngine.OnFoodCollected -= HandleFoodCollected;
         GameEngine.OnComboReset    -= HandleComboReset;
         GameEngine.OnStatusChanged -= HandleStatusChanged;
+        Shop.OnInventoryChanged    -= HandleInventoryChanged;
 
         if (_inputModule is not null)
         {

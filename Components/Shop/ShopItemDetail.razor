@@ -1,0 +1,109 @@
+@* ShopItemDetail.razor — Painel de detalhes do item selecionado *@
+@namespace SnakeClaude.Components.Shop
+@using SnakeClaude.DTOs.Shop
+@using SnakeClaude.Enums
+
+<div class="shop-detail fade-in">
+
+    <div class="detail-icon @Item.RarityCss">@Item.Icon</div>
+    <div class="detail-rarity @Item.RarityCss">@Item.RarityLabel</div>
+    <div class="detail-name glow">@Item.Name</div>
+    <div class="detail-desc">@Item.Description</div>
+
+    <div class="crt-divider" style="margin:0.8rem 0;"></div>
+
+    <div class="detail-meta">
+        @if (Item.Price > 0)
+        {
+            <div class="detail-meta-row">
+                <span class="meta-label">PREÇO</span>
+                <span class="meta-value @(Balance >= Item.Price ? "can-afford" : "cant-afford")">
+                    ⬡ @Item.Price
+                </span>
+            </div>
+        }
+        <div class="detail-meta-row">
+            <span class="meta-label">STATUS</span>
+            <span class="meta-value">@GetStateLabel()</span>
+        </div>
+    </div>
+
+    <div class="crt-divider" style="margin:0.8rem 0;"></div>
+
+    @* Feedback *@
+    @if (!string.IsNullOrEmpty(FeedbackMessage))
+    {
+        <div class="detail-feedback @(FeedbackIsError ? "feedback-error" : "feedback-ok")
+                    fade-in">
+            @FeedbackMessage
+        </div>
+    }
+
+    @* Ações *@
+    <div class="detail-actions">
+        @if (Item.State == ShopItemState.Available && Item.IsAvailable)
+        {
+            <button class="btn-crt @(CanBuy() ? "" : "btn-disabled")"
+                    disabled="@(!CanBuy() || IsPurchasing)"
+                    @onclick="@(() => OnPurchase.InvokeAsync(Item.Id))">
+                @if (IsPurchasing)
+                {
+                    <span>PROCESSANDO...</span>
+                }
+                else if (Item.Price == 0)
+                {
+                    <span>[ OBTER GRÁTIS ]</span>
+                }
+                else
+                {
+                    <span>[ COMPRAR — ⬡ @Item.Price ]</span>
+                }
+            </button>
+        }
+        else if (Item.State == ShopItemState.Purchased)
+        {
+            <button class="btn-crt" @onclick="@(() => OnEquip.InvokeAsync(Item.Id))">
+                [ EQUIPAR ]
+            </button>
+        }
+        else if (Item.State == ShopItemState.Equipped)
+        {
+            <button class="btn-crt secondary" @onclick="@(() => OnEquip.InvokeAsync(Item.Id))">
+                [ DESEQUIPAR ]
+            </button>
+        }
+        else if (Item.State == ShopItemState.Unavailable)
+        {
+            <button class="btn-crt" disabled>[ EM BREVE ]</button>
+        }
+    </div>
+
+    @if (!CanBuy() && Item.State == ShopItemState.Available && Item.Price > 0)
+    {
+        <div class="detail-hint">
+            Necessário: ⬡ @Item.Price — Você tem: ⬡ @Balance
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ShopItemDto Item    { get; set; } = null!;
+    [Parameter] public int Balance                         { get; set; }
+    [Parameter] public bool IsPurchasing                   { get; set; }
+    [Parameter] public string? FeedbackMessage             { get; set; }
+    [Parameter] public bool FeedbackIsError                { get; set; }
+    [Parameter] public EventCallback<string> OnPurchase    { get; set; }
+    [Parameter] public EventCallback<string> OnEquip       { get; set; }
+
+    private bool CanBuy() => Item.Price == 0 || Balance >= Item.Price;
+
+    private string GetStateLabel() => Item.State switch
+    {
+        ShopItemState.Available   => Item.IsAvailable ? "DISPONÍVEL" : "EM BREVE",
+        ShopItemState.Purchased   => "ADQUIRIDO",
+        ShopItemState.Equipped    => "EQUIPADO",
+        ShopItemState.Locked      => "BLOQUEADO",
+        ShopItemState.Unavailable => "EM BREVE",
+        _                         => "—"
+    };
+}

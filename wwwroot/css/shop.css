@@ -1,0 +1,298 @@
+/* ═══════════════════════════════════════════════════════════════
+   SHOP.CSS — Sistema de Loja Snake Claude
+   Estética: terminal retrô CRT fósforo verde
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Página e wrapper ────────────────────────────────────────── */
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100dvh;
+  padding: 1.2rem 1rem;
+  background: var(--bg-black);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.shop-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 760px;
+  gap: 1rem;
+  font-family: var(--font-mono);
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0.6rem 0;
+  gap: 1rem;
+}
+.shop-title-block { display: flex; flex-direction: column; gap: 0.15rem; }
+.shop-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.shop-title {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: bold;
+  color: var(--phosphor-bright);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow: 0 0 8px var(--phosphor-green), 0 0 20px var(--glow-color);
+}
+.shop-subtitle {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+}
+
+/* ── Carteira ─────────────────────────────────────────────────── */
+.shop-wallet {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.9rem;
+  transition: border-color var(--transition-fast);
+}
+.shop-wallet:hover { border-color: var(--border-bright); }
+.wallet-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.wallet-balance {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--phosphor-bright);
+}
+@keyframes balance-pulse-anim {
+  0%   { transform: scale(1.25); color: #a0ffcc; }
+  100% { transform: scale(1);    color: var(--phosphor-bright); }
+}
+.balance-pulse { animation: balance-pulse-anim 0.5s ease forwards; }
+
+/* ── Divider fullwidth ───────────────────────────────────────── */
+.crt-divider-full {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright) 20%, var(--border-bright) 80%, transparent);
+  opacity: 0.5;
+}
+
+/* ── Abas ─────────────────────────────────────────────────────── */
+.shop-tabs {
+  display: flex;
+  gap: 0.4rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.shop-tab {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  bottom: -1px;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.shop-tab:hover {
+  color: var(--phosphor-green);
+  border-color: var(--border-color);
+  background: var(--bg-surface);
+}
+.shop-tab.active {
+  color: var(--phosphor-bright);
+  background: var(--bg-panel);
+  border-color: var(--border-bright) var(--border-bright) var(--bg-panel);
+  text-shadow: 0 0 8px var(--glow-color);
+}
+.tab-icon { font-size: 0.9rem; opacity: 0.8; }
+
+/* ── Corpo da loja ────────────────────────────────────────────── */
+.shop-body {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 0.8rem;
+  min-height: 340px;
+}
+
+/* ── Grid de itens ────────────────────────────────────────────── */
+.shop-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  align-content: start;
+}
+
+/* ── Card de item ─────────────────────────────────────────────── */
+.shop-item-card {
+  font-family: var(--font-mono);
+  background: linear-gradient(180deg, rgba(15,32,22,0.7), rgba(8,14,10,0.9));
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.8rem 0.6rem 0.6rem;
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+              transform var(--transition-fast), background var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 110px;
+}
+.shop-item-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(74,158,107,0.03), transparent);
+  pointer-events: none;
+}
+.shop-item-card:hover {
+  border-color: var(--border-bright);
+  box-shadow: 0 0 10px var(--glow-soft), inset 0 0 20px rgba(74,158,107,0.04);
+  transform: translateY(-1px);
+}
+.shop-item-card:active { transform: translateY(0); }
+.shop-item-card.selected {
+  border-color: var(--phosphor-green);
+  background: linear-gradient(180deg, rgba(39,104,58,0.18), rgba(9,32,15,0.85));
+  box-shadow: 0 0 14px var(--glow-soft), inset 0 0 24px rgba(74,158,107,0.08);
+}
+.shop-item-card.is-equipped {
+  border-color: var(--phosphor-bright);
+  box-shadow: 0 0 10px rgba(109,191,138,0.2);
+}
+.shop-item-card.is-unavailable { opacity: 0.5; cursor: default; }
+.shop-item-card.is-unavailable:hover { border-color: var(--border-color); transform: none; box-shadow: none; }
+.shop-item-card.is-owned::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--phosphor-green);
+  opacity: 0.6;
+}
+
+/* Raridades */
+.rarity-common    { color: var(--text-bright); }
+.rarity-rare      { color: #5aafcf; text-shadow: 0 0 8px rgba(90,175,207,0.4); }
+.rarity-epic      { color: #b07adf; text-shadow: 0 0 8px rgba(176,122,223,0.4); }
+.rarity-legendary { color: #dfb05a; animation: legendary-glow 2s ease infinite alternate; }
+@keyframes legendary-glow {
+  from { text-shadow: 0 0 8px rgba(223,176,90,0.4); }
+  to   { text-shadow: 0 0 16px rgba(223,176,90,0.7), 0 0 30px rgba(223,176,90,0.3); }
+}
+.item-tag { position: absolute; top: 4px; right: 4px; font-size: 0.42rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.1rem 0.3rem; border-radius: 2px; }
+.tag-default { background: rgba(74,158,107,0.15); border: 1px solid var(--border-color); color: var(--text-dim); }
+.tag-soon { background: rgba(74,74,74,0.15); border: 1px solid #333; color: #555; }
+.item-card-icon { font-size: 1.6rem; line-height: 1; display: block; }
+.item-card-name { font-size: 0.65rem; color: var(--text-primary); letter-spacing: 0.05em; text-align: center; line-height: 1.2; }
+.item-card-footer { margin-top: auto; width: 100%; text-align: center; }
+.item-price { font-size: 0.65rem; color: var(--phosphor-bright); font-weight: bold; }
+.item-status { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: bold; }
+.item-status.equipped    { color: var(--phosphor-bright); }
+.item-status.purchased   { color: var(--text-dim); }
+.item-status.unavailable { color: #444; }
+.item-status.free        { color: #5aafcf; }
+
+/* Detalhe */
+.shop-detail { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 4px; padding: 1.2rem 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; position: sticky; top: 1rem; max-height: calc(100dvh - 4rem); overflow-y: auto; }
+.detail-icon { font-size: 2.8rem; line-height: 1; margin-bottom: 0.2rem; }
+.detail-rarity { font-size: 0.55rem; letter-spacing: 0.25em; text-transform: uppercase; font-weight: bold; }
+.detail-name { font-size: 1.1rem; font-weight: bold; color: var(--phosphor-bright); letter-spacing: 0.1em; text-transform: uppercase; }
+.detail-desc { font-size: 0.65rem; color: var(--text-dim); line-height: 1.6; padding: 0 0.3rem; }
+.detail-meta { width: 100%; display: flex; flex-direction: column; gap: 0.3rem; }
+.detail-meta-row { display: flex; justify-content: space-between; font-size: 0.65rem; }
+.meta-label { color: var(--text-muted); letter-spacing: 0.1em; }
+.meta-value { color: var(--text-bright); font-weight: bold; }
+.meta-value.can-afford { color: var(--phosphor-bright); }
+.meta-value.cant-afford { color: #8a4a4a; }
+.detail-feedback { font-size: 0.7rem; font-weight: bold; letter-spacing: 0.1em; padding: 0.4rem 0.8rem; border-radius: 3px; width: 100%; text-align: center; }
+.feedback-ok { color: var(--phosphor-bright); background: rgba(74,158,107,0.1); border: 1px solid var(--border-bright); }
+.feedback-error { color: #c97a7a; background: rgba(138,74,74,0.1); border: 1px solid #5a2e2e; }
+.detail-actions { width: 100%; display: flex; flex-direction: column; gap: 0.4rem; }
+.btn-disabled { opacity: 0.4; cursor: not-allowed !important; }
+.detail-hint { font-size: 0.58rem; color: var(--text-muted); text-align: center; }
+.shop-detail-empty { background: var(--bg-panel); border: 1px dashed var(--border-color); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; opacity: 0.4; min-height: 200px; }
+.detail-empty-icon { font-size: 2rem; color: var(--text-muted); }
+.detail-empty-text { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+
+/* Footer */
+.shop-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.2rem; font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.08em; border-top: 1px solid var(--border-color); }
+.shop-back-link { color: var(--text-dim); text-decoration: none; letter-spacing: 0.1em; font-size: 0.65rem; transition: color var(--transition-fast); }
+.shop-back-link:hover { color: var(--phosphor-green); text-shadow: 0 0 6px var(--glow-soft); }
+
+/* Toast moeda */
+.currency-toast {
+  position: fixed;
+  bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--bg-panel);
+  border: 1px solid var(--phosphor-green);
+  border-radius: 4px;
+  padding: 0.6rem 1.4rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  z-index: 9990;
+  box-shadow: 0 0 20px var(--glow-color), 0 0 40px var(--glow-soft);
+  pointer-events: none;
+  min-width: 180px;
+}
+.toast-icon { font-size: 1.1rem; color: var(--phosphor-bright); text-shadow: 0 0 10px var(--glow-color); }
+.toast-text { font-size: 1.1rem; font-weight: bold; color: var(--phosphor-bright); letter-spacing: 0.1em; text-shadow: 0 0 10px var(--glow-color); }
+.toast-sub  { font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.1em; }
+@keyframes toast-leave-anim {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(12px); }
+}
+.toast-leave { animation: toast-leave-anim 0.4s ease forwards; }
+
+/* Botao loja no HUD */
+.shop-link-hud { color: var(--text-muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.08em; transition: color var(--transition-fast); }
+.shop-link-hud:hover { color: var(--phosphor-green); }
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .shop-body { grid-template-columns: 1fr; }
+  .shop-detail { position: static; max-height: none; }
+  .shop-header { flex-direction: column; align-items: flex-start; }
+  .shop-wallet { align-self: stretch; flex-direction: row; justify-content: space-between; align-items: center; }
+  .shop-items-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .shop-tab { padding: 0.45rem 0.7rem; font-size: 0.62rem; }
+  .tab-label { display: none; }
+  .tab-icon  { font-size: 1rem; }
+}
+@media (max-width: 380px) {
+  .shop-items-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .shop-wrapper { max-width: 820px; }
+  .shop-items-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}

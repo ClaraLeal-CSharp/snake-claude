@@ -2,6 +2,13 @@
    GAME.CSS — Layout principal da página do jogo
    ═══════════════════════════════════════════════════════════════ */
 
+
+/* --- Textos Selecionáveis e Inputs de Texto --- */
+p, span, h1, h2, h3, input[type="text"], textarea {
+    cursor: url('Pointers/Text Select.cur'), text;
+}
+
+
 /* ── Página do jogo ──────────────────────────────────────────── */
 .game-page {
   display: flex;

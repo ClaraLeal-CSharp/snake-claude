@@ -34,11 +34,29 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  height: 100%;
-  background: var(--bg-black);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  overflow: hidden;
+    height: 100%;
+    background: var(--bg-black);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    cursor: url('Pointers/Normal Select.cur'), pointer;
+}
+
+:is(
+  a[href],
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  summary,
+  [role="button"],
+  [role="radio"],
+  [role="menuitem"]
+):not(:disabled):not([aria-disabled="true"]) {
+  cursor: url('Pointers/Select.cur'), pointer;
 }
 
 /* ── Efeito CRT Global ──────────────────────────────────────── */

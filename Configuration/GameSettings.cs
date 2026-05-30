@@ -62,7 +62,7 @@ public class GameSettings
 
     // ── Comida ─────────────────────────────────────────────────────────────
     /// <summary>Número de itens de comida simultâneos no mapa.</summary>
-    public int MaxFoodItems { get; set; } = 1;
+    public int MaxFoodItems { get; set; } = 2;
 
     // ── Multiplayer (preparado para futuro) ────────────────────────────────
     /// <summary>Número máximo de jogadores (1 = single player).</summary>

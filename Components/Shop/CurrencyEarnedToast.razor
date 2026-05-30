@@ -1,0 +1,35 @@
+@* CurrencyEarnedToast.razor — Toast de Snake Bites ganhos ao fim da partida *@
+@namespace SnakeClaude.Components.Shop
+@using SnakeClaude.DTOs.Shop
+
+@if (_visible && _result is not null && _result.SnakeBitesEarned > 0)
+{
+    <div class="currency-toast fade-in-up @(_leaving ? "toast-leave" : "")">
+        <span class="toast-icon">⬡</span>
+        <span class="toast-text">@_result.DisplayText</span>
+        <span class="toast-sub">@_result.PointsConverted pts convertidos</span>
+    </div>
+}
+
+@code {
+    private ConversionResultDto? _result;
+    private bool _visible;
+    private bool _leaving;
+
+    /// <summary>Exibe o toast com o resultado da conversão.</summary>
+    public async Task ShowAsync(ConversionResultDto result)
+    {
+        if (result.SnakeBitesEarned <= 0) return;
+        _result  = result;
+        _leaving = false;
+        _visible = true;
+        StateHasChanged();
+
+        await Task.Delay(2800);
+        _leaving = true;
+        StateHasChanged();
+        await Task.Delay(400);
+        _visible = false;
+        StateHasChanged();
+    }
+}

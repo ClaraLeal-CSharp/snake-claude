@@ -1,0 +1,59 @@
+@* ShopItemCard.razor — Card de item na grade da loja *@
+@namespace SnakeClaude.Components.Shop
+@using SnakeClaude.DTOs.Shop
+@using SnakeClaude.Enums
+
+<button class="shop-item-card @GetCardClass()"
+        @onclick="OnSelect"
+        title="@Item.Name">
+
+    @if (!string.IsNullOrEmpty(Item.PreviewTag))
+    {
+        <span class="item-tag @(Item.State == ShopItemState.Unavailable ? "tag-soon" : "tag-default")">
+            @Item.PreviewTag
+        </span>
+    }
+
+    <span class="item-card-icon @Item.RarityCss">@Item.Icon</span>
+    <span class="item-card-name">@Item.Name</span>
+
+    <div class="item-card-footer">
+        @if (Item.State == ShopItemState.Equipped)
+        {
+            <span class="item-status equipped">EQUIPADO</span>
+        }
+        else if (Item.State == ShopItemState.Purchased)
+        {
+            <span class="item-status purchased">✓ OBTIDO</span>
+        }
+        else if (Item.State == ShopItemState.Unavailable)
+        {
+            <span class="item-status unavailable">EM BREVE</span>
+        }
+        else if (Item.Price == 0)
+        {
+            <span class="item-status free">GRÁTIS</span>
+        }
+        else
+        {
+            <span class="item-price">⬡ @Item.Price</span>
+        }
+    </div>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public ShopItemDto Item    { get; set; } = null!;
+    [Parameter] public bool IsSelected                     { get; set; }
+    [Parameter] public EventCallback OnSelect              { get; set; }
+
+    private string GetCardClass()
+    {
+        var classes = new List<string>();
+        if (IsSelected)                               classes.Add("selected");
+        if (Item.State == ShopItemState.Equipped)     classes.Add("is-equipped");
+        if (Item.State == ShopItemState.Unavailable)  classes.Add("is-unavailable");
+        if (Item.State == ShopItemState.Purchased ||
+            Item.State == ShopItemState.Equipped)     classes.Add("is-owned");
+        return string.Join(" ", classes);
+    }
+}
