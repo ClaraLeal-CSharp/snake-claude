@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#060e09",
   "theme_color": "#060e09",
-  "description": "Snake Game — Blazor WebAssembly + efeitos CRT",
+  "description": "Snake Game",
   "icons": [
     {
       "src": "favicon.png",
